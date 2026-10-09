@@ -18,7 +18,28 @@ in
 
   boot.kernelParams = [
     "amd_pstate=active"   # modern AMD CPU frequency driver
+    # Silent boot: splash screen instead of scrolling text
+    "quiet"
+    "splash"
+    "boot.shell_on_fail"
+    "udev.log_priority=3"
+    "rd.systemd.show_status=auto"
   ];
+
+  ############################################################
+  # Boot splash (Plymouth, Catppuccin Mocha)
+  ############################################################
+  boot.plymouth = {
+    enable = true;
+    theme = "catppuccin-mocha";
+    themePackages = [ (pkgs.catppuccin-plymouth.override { variant = "mocha"; }) ];
+  };
+  boot.consoleLogLevel = 3;
+  boot.initrd.verbose = false;
+  # Load the Nvidia driver early so the splash shows in full resolution
+  boot.initrd.kernelModules = [ "nvidia" "nvidia_modeset" "nvidia_uvm" "nvidia_drm" ];
+  # Hide the boot menu; hold Space while booting to show it (for rollbacks)
+  boot.loader.timeout = 0;
 
   hardware.cpu.amd.updateMicrocode = true;
   hardware.enableRedistributableFirmware = true;
@@ -51,14 +72,36 @@ in
     xwayland.enable = true; # for Battle.net, Steam and other X11 apps
   };
 
-  # Minimal login screen that starts Hyprland
-  services.greetd = {
+  # Graphical login screen (ReGreet on greetd), themed to match
+  programs.regreet = {
     enable = true;
-    settings.default_session = {
-      command = "${pkgs.tuigreet}/bin/tuigreet --time --remember --cmd 'uwsm start hyprland-uwsm.desktop'";
-      user = "greeter";
+    settings = {
+      background = {
+        path = ./wallpapers/wallpaper-landscape.jpg;
+        fit = "Cover";
+      };
+      GTK.application_prefer_dark_theme = true;
+    };
+    theme = {
+      name = "adw-gtk3-dark";
+      package = pkgs.adw-gtk3;
+    };
+    iconTheme = {
+      name = "Papirus-Dark";
+      package = pkgs.papirus-icon-theme.override { color = "violet"; };
+    };
+    cursorTheme = {
+      name = "catppuccin-mocha-dark-cursors";
+      package = pkgs.catppuccin-cursors.mochaDark;
+    };
+    font = {
+      name = "JetBrainsMono Nerd Font";
+      size = 14;
+      package = pkgs.nerd-fonts.jetbrains-mono;
     };
   };
+
+  programs.dconf.enable = true;   # lets home-manager set dark-mode preferences
 
   # Keyring so VS Code, gh and Discord can store logins
   services.gnome.gnome-keyring.enable = true;
@@ -101,6 +144,11 @@ in
     options = "ctrl:nocaps";   # Caps Lock acts as Ctrl
   };
   console.useXkbConfig = true; # same layout + Caps->Ctrl on the login screen/TTY
+  # Catppuccin Mocha colours for the text console too
+  console.colors = [
+    "1e1e2e" "f38ba8" "a6e3a1" "f9e2af" "89b4fa" "f5c2e7" "94e2d5" "bac2de"
+    "585b70" "f38ba8" "a6e3a1" "f9e2af" "89b4fa" "f5c2e7" "94e2d5" "a6adc8"
+  ];
 
   ############################################################
   # Networking, audio, bluetooth
@@ -160,30 +208,31 @@ in
     gh
     vscode
     nixd            # Nix language server for VS Code
-    nixfmt-rfc-style
+    nixfmt
 
     # Communication
     discord
-    wasistlos       # WhatsApp desktop client (formerly whatsapp-for-linux)
+    karere          # WhatsApp desktop client (replaces the removed wasistlos)
 
     # Hyprland essentials
     kitty                 # terminal
     waybar                # status bar
     fuzzel                # app launcher
     mako                  # notifications
-    hyprpaper             # wallpaper
+    swaybg                # wallpaper (per monitor)
     hyprlock              # lock screen
     hypridle              # idle -> lock
     hyprpolkitagent       # password prompts for GUI apps
     grim slurp wl-clipboard   # screenshots + clipboard
     cliphist
+    libnotify             # notify-send, used by the screenshot keys
     brightnessctl playerctl
     pavucontrol           # audio settings
     networkmanagerapplet  # wifi tray icon
     blueman               # bluetooth GUI
     nautilus              # file manager
     nvidia-vaapi-driver
-    xorg.xrandr           # sets primary monitor for XWayland games
+    xrandr                # sets primary monitor for XWayland games
 
     # Utilities
     wget

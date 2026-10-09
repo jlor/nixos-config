@@ -1,0 +1,134 @@
+/* ~/.config/waybar/style.css — Catppuccin Mocha, floating pills */
+
+@define-color base     #1e1e2e;
+@define-color mantle   #181825;
+@define-color crust    #11111b;
+@define-color surface0 #313244;
+@define-color surface1 #45475a;
+@define-color overlay0 #6c7086;
+@define-color text     #cdd6f4;
+@define-color subtext  #bac2de;
+@define-color mauve    #cba6f7;
+@define-color blue     #89b4fa;
+@define-color sapphire #74c7ec;
+@define-color green    #a6e3a1;
+@define-color yellow   #f9e2af;
+@define-color peach    #fab387;
+@define-color red      #f38ba8;
+@define-color teal     #94e2d5;
+@define-color pink     #f5c2e7;
+
+* {
+  font-family: "JetBrainsMono Nerd Font";
+  font-size: 13px;
+  font-weight: 600;
+  min-height: 0;
+  border: none;
+}
+
+window#waybar {
+  background: transparent;
+  color: @text;
+}
+
+/* Each side of the bar is its own frosted pill */
+.modules-left,
+.modules-center,
+.modules-right {
+  background: rgba(30, 30, 46, 0.78);
+  border: 1px solid rgba(203, 166, 247, 0.25);
+  border-radius: 16px;
+  padding: 0 6px;
+}
+
+#custom-logo {
+  color: @blue;
+  font-size: 18px;
+  padding: 0 12px 0 8px;
+}
+
+#workspaces button {
+  color: @overlay0;
+  background: transparent;
+  padding: 0 8px;
+  margin: 5px 2px;
+  border-radius: 10px;
+  transition: all 0.2s ease;
+}
+
+#workspaces button:hover {
+  color: @text;
+  background: @surface0;
+}
+
+#workspaces button.active {
+  color: @crust;
+  background: linear-gradient(45deg, @mauve, @blue);
+  padding: 0 14px;
+}
+
+#workspaces button.urgent {
+  color: @crust;
+  background: @red;
+}
+
+#window {
+  color: @subtext;
+  padding: 0 10px;
+}
+
+window#waybar.empty #window {
+  padding: 0;
+}
+
+#clock {
+  color: @mauve;
+  font-size: 14px;
+  font-weight: 800;
+  padding: 0 16px;
+}
+
+#tray,
+#custom-gpu,
+#cpu,
+#memory,
+#pulseaudio,
+#bluetooth,
+#network {
+  padding: 0 10px;
+}
+
+#custom-gpu { color: @green; }
+#cpu        { color: @sapphire; }
+#memory     { color: @teal; }
+#pulseaudio { color: @yellow; }
+#bluetooth  { color: @blue; }
+#network    { color: @mauve; }
+
+#pulseaudio.muted,
+#network.disconnected,
+#bluetooth.disabled {
+  color: @overlay0;
+}
+
+#custom-power {
+  color: @red;
+  font-size: 15px;
+  padding: 0 12px 0 10px;
+}
+
+#custom-power:hover {
+  color: @crust;
+  background: @red;
+  border-radius: 12px;
+}
+
+tooltip {
+  background: rgba(17, 17, 27, 0.95);
+  border: 1px solid @mauve;
+  border-radius: 12px;
+}
+
+tooltip label {
+  color: @text;
+}
