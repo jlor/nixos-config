@@ -242,7 +242,6 @@ in
     waybar                # status bar
     mako                  # notifications
     swaybg                # wallpaper (per monitor)
-    hyprlock              # lock screen
     hypridle              # idle -> lock
     hyprpolkitagent       # password prompts for GUI apps
     grim slurp wl-clipboard   # screenshots + clipboard (Walker keeps the history)
