@@ -43,8 +43,13 @@ A reinstall must get back to the known state with: install NixOS, run
 - Hyprland 0.55 uses a Lua config (`config/hypr/hyprland.lua`, `hl.*` API), not
   hyprland.conf syntax. hyprlock and hypridle still use the .conf format.
 - Public repo: no secrets, tokens, emails or other personal data in plain text.
-  Secrets go through sops (`secrets.nix`, `secrets/secrets.yaml`); anything in
-  `secrets.nix` that needs the file must sit behind its `hasSecrets` guard.
+  Secrets go through sops (`secrets.nix`, `secrets/secrets.yaml`). Declare each secret
+  behind `has "<name>"` in secrets.nix, and have other modules check
+  `config.sops.secrets ? <name>`, so the config evaluates before the secret exists.
+- pam_u2f uses a fixed origin `pam://desktop` (security.nix and bootstrap.sh must match);
+  changing it invalidates the registered YubiKey.
+- Hardware/secret-dependent features must degrade gracefully: no YubiKey or no secret
+  yet means falling back to passwords, never a lockout.
 - Never edit `hardware-configuration.nix` or `flake.lock` by hand; they're
   generated (bootstrap writes the first, Renovate updates the second weekly).
 - `system.stateVersion` and `home.stateVersion` stay at "26.05" forever.
@@ -52,7 +57,8 @@ A reinstall must get back to the known state with: install NixOS, run
 ## Layout
 - `configuration.nix`: system (drivers, boot, login, services, system packages)
 - `home.nix`: user jlor via home-manager; links dotfiles from `config/`
-- `secrets.nix`: sops-nix; `bootstrap.sh`: the `#bootstrap` app
+- `secrets.nix`: sops-nix; `security.nix`: 1Password, YubiKey, PAM, hyprlock
+- `bootstrap.sh`: the `#bootstrap` app
 - `templates/`: project dev shells; `ci/`: CI-only files
 
 ## Preferences

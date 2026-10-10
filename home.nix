@@ -1,5 +1,12 @@
 { pkgs, lib, ... }:
 
+let
+  # Your SSH signing key's PUBLIC half from 1Password (starts with "ssh-ed25519 ").
+  # Public keys are safe to commit (GitHub shows them at github.com/jlor.keys).
+  # While null, commits aren't signed. See README → 1Password.
+  sshSigningKey = null;
+in
+
 # User-level config for jlor, managed by home-manager.
 # Dotfiles live in ./config and are linked into ~/.config on every rebuild,
 # so a push to the repo (deployed by comin) also updates your desktop look.
@@ -19,6 +26,7 @@
     "mako".source = ./config/mako;
     "spaceship.zsh".source = ./config/zsh/spaceship.zsh;
     "elephant/menus".source = ./config/elephant/menus;
+    "elephant/1password.toml".source = ./config/elephant/1password.toml;
   };
 
   # Wallpapers at a stable path, used by hyprland.lua
@@ -75,6 +83,7 @@
         "runner"
         "menus"
         "providerlist"
+        "1password"
       ];
     };
   };
@@ -94,6 +103,7 @@
         { prefix = "+"; provider = "windows"; }
         { prefix = ">"; provider = "runner"; }
         { prefix = ";"; provider = "providerlist"; }
+        { prefix = "*"; provider = "1password"; }
       ];
     };
     theme = {
@@ -196,7 +206,25 @@
     # Your email lives encrypted in secrets/secrets.yaml (git_email); sops-nix renders
     # it to this file at boot (see secrets.nix). Change it with `sops secrets/secrets.yaml`.
     includes = [ { path = "/run/secrets/rendered/git-identity"; } ];
+
+    # Sign commits with your SSH key in 1Password (shows "Verified" on GitHub).
+    # 1Password asks for approval (system password or YubiKey) when signing.
+    signing = lib.mkIf (sshSigningKey != null) {
+      format = "ssh";
+      key = sshSigningKey;
+      signer = "${pkgs._1password-gui}/bin/op-ssh-sign";
+      signByDefault = true;
+    };
   };
+
+  # SSH keys live in 1Password; its agent serves them to ssh and git.
+  # Turn the agent on once in the app: Settings → Developer → Use the SSH agent.
+  programs.ssh = {
+    enable = true;
+    enableDefaultConfig = false;
+    settings."*".IdentityAgent = "~/.1password/agent.sock";
+  };
+  home.sessionVariables.SSH_AUTH_SOCK = "$HOME/.1password/agent.sock";
 
   programs.gh = {
     enable = true;
