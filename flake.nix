@@ -25,7 +25,26 @@
     };
   };
 
-  outputs = { self, nixpkgs, home-manager, sops-nix, comin, ... }: {
+  outputs = { self, nixpkgs, home-manager, sops-nix, comin, ... }:
+  let
+    pkgs = nixpkgs.legacyPackages.x86_64-linux;
+    # Built with shellcheck, so a broken script fails CI rather than a fresh install.
+    bootstrap = pkgs.writeShellApplication {
+      name = "bootstrap";
+      runtimeInputs = with pkgs; [ git gh age sops diffutils gnused gnugrep coreutils ];
+      text = builtins.readFile ./bootstrap.sh;
+    };
+  in
+  {
+    # Set up a fresh install against this repo (see bootstrap.sh / README):
+    #   nix --extra-experimental-features "nix-command flakes" run github:jlor/nixos-config#bootstrap
+    packages.x86_64-linux.bootstrap = bootstrap;
+    apps.x86_64-linux.bootstrap = {
+      type = "app";
+      program = "${bootstrap}/bin/bootstrap";
+      meta.description = "Bootstrap this machine against the nixos-config repo";
+    };
+
     # Project dev shells: `devshell <name>` (or `nix flake init -t github:jlor/nixos-config#<name>`)
     templates = {
       default = { path = ./templates/default; description = "Empty dev shell to fill in"; };

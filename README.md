@@ -7,7 +7,9 @@ terminal. Everything, dotfiles included, is deployed from this repo by comin.
 
 | Path | What it is |
 |---|---|
-| `flake.nix` | Entry point: nixpkgs 26.05, home-manager, comin |
+| `flake.nix` | Entry point: nixpkgs 26.05, home-manager, sops-nix, comin; the `#bootstrap` app |
+| `bootstrap.sh` | Sets up a fresh install against this repo (see Install) |
+| `CLAUDE.md` | Working rules for Claude Code sessions on this repo |
 | `configuration.nix` | System: drivers, boot splash, login screen, apps |
 | `home.nix` | Your user: links the dotfiles below, GTK theme, cursor, shell |
 | `config/hypr/` | Hyprland (`hyprland.lua`), lock screen, idle settings |
@@ -23,13 +25,42 @@ terminal. Everything, dotfiles included, is deployed from this repo by comin.
 
 ## Install
 
-1. **Boot the installer.** Use the NixOS 26.05 graphical ISO. If it hangs with the 5090,
-   pick the `nomodeset` boot entry (the installer won't have the open Nvidia driver yet).
-2. Partition and install as normal (the Calamares installer is fine). Create the user
-   **`jlor`**, which must match `username` in `configuration.nix`. Reboot.
-3. Follow the **Bootstrap** steps under "GitOps with comin" below.
-4. Reboot. You'll get the boot splash, then the graphical login: pick
+The same steps work for the first install and for a reinstall.
+
+1. **BIOS:** see "BIOS" at the end (EXPO, Resizable BAR, monitors on the 5090).
+2. **Install NixOS** from the 26.05 graphical ISO. If it hangs with the 5090, pick the
+   `nomodeset` boot entry (the installer doesn't have the open Nvidia driver yet).
+   Partition as you like, create the user **`jlor`**, and reboot into the new system.
+3. **Reinstall only:** have your personal age key ready (from your password manager).
+4. **Run the bootstrap**, as jlor, in a terminal:
+
+   ```sh
+   nix --extra-experimental-features "nix-command flakes" run github:jlor/nixos-config#bootstrap
+   ```
+
+   It clones the repo to `~/nixos-config`, adds this machine's hardware config, sets up
+   the sops keys and secrets (asking for your git email the first time, or your age key
+   on a reinstall), builds the full system, and offers to commit and push the result.
+   It's safe to run again. Read [`bootstrap.sh`](bootstrap.sh) for the details.
+5. **Reboot.** You'll get the boot splash, then the graphical login: pick
    **Hyprland (UWSM)** as the session (it's remembered). Check the driver with `nvidia-smi`.
+6. **First install only:** store the personal age key the bootstrap printed in your
+   password manager. Without it the secrets can't be opened on the next reinstall.
+
+## What to back up
+
+The repo restores the whole system and every setting. These live outside it:
+
+| What | Where | Why |
+|---|---|---|
+| Your personal age key | `~/.config/sops/age/keys.txt` | Only way to open the secrets after a reinstall. Keep it in your password manager. |
+| Your home folder's data | `~/` (documents, projects, `~/.ssh`) | Personal files aren't config. Code lives in git remotes anyway. |
+| Game libraries | `~/.local/share/Steam`, Lutris prefixes | Large but re-downloadable; back up save games that don't use cloud saves. |
+| App logins | Firefox, Discord, WhatsApp, Steam, Claude Code, `gh` | Sign in again after a reinstall. Firefox Sync covers the browser. |
+| Local AI models | `/var/lib/ollama` | Re-downloaded automatically after a reinstall. |
+
+Not needed: the desktop's own age key (a reinstall makes a new one, and bootstrap
+re-encrypts the secrets for it) and `hardware-configuration.nix` (regenerated).
 
 ## Look & feel
 
@@ -78,10 +109,10 @@ The power menu (Super + Escape, or ⏻ in the bar) is a Walker menu defined in
   `cdi` picks interactively. Plain paths work as before.
 - **Editor:** vim everywhere (`$EDITOR`, git, sudoedit), Catppuccin colours, persistent undo.
 - **Aliases:** `ls`/`ll`/`tree` use eza, `cat` uses bat, `vi` is vim. `fastfetch` shows a system summary.
-- **Git:** set up for the command line, with `gh` handling GitHub logins. Your email is kept
-  out of this public repo, so set it once after install:
-  `git config --file ~/.config/git/local user.email "you@example.com"`
-  (GitHub's noreply address from Settings → Emails keeps it private on commits too.)
+- **Git:** set up for the command line, with `gh` handling GitHub logins. Your commit email
+  is a sops secret (`git_email`), so it stays out of this public repo but still comes back
+  on a reinstall. Change it with `sops secrets/secrets.yaml`. GitHub's noreply address
+  (Settings → Emails) keeps it private on commits too.
 
 ### Project environments (direnv + Nix dev shells)
 
@@ -153,15 +184,8 @@ native parts).
 Once comin is running, the git repo is the source of truth: push to `main` and the
 desktop deploys it within about a minute. Commits that fail to build are not deployed.
 
-Bootstrap (one time, on the freshly installed PC):
-1. `nix-shell -p git gh` then `gh auth login`
-2. `git clone https://github.com/jlor/nixos-config ~/nixos-config && cd ~/nixos-config`
-3. `cp /etc/nixos/hardware-configuration.nix . && git add hardware-configuration.nix`
-4. `sudo nixos-rebuild switch --flake .#desktop` (this also creates `flake.lock`)
-5. `git add flake.lock && git commit -m "Add hardware config and lock file" && git push`
-   (a direct push to `main` is allowed here because you're the repo admin)
-
-From then on, changes go through pull requests (see CI below). The repo is public, so
+Changes go through pull requests (see CI below); the bootstrap's own commit is the one
+exception, pushed directly because you're the repo admin. The repo is public, so
 comin needs no token. Never commit plaintext secrets (passwords, tokens, SSH keys) here;
 use sops (see Secrets below).
 
@@ -214,33 +238,19 @@ Requires the Renovate GitHub App: install it from
 Secrets are stored encrypted in `secrets/secrets.yaml`, so they can live in this public
 repo. At boot, sops-nix decrypts them with the desktop's own key into `/run/secrets/`
 (in RAM, never in the Nix store). Two keys can decrypt: yours, to edit, and the desktop's,
-to use them.
+to use them. Both are set up by the bootstrap; nothing to do by hand.
 
-One-time setup, after the first rebuild on the PC:
+- Edit secrets: `sops secrets/secrets.yaml` (decrypts into vim, re-encrypts on save).
+- Use a secret: declare it in `secrets.nix`, inside the `hasSecrets` block:
 
-```sh
-# 1. Your personal key (back it up, e.g. in your password manager)
-mkdir -p ~/.config/sops/age
-age-keygen -o ~/.config/sops/age/keys.txt        # prints your public key
+  ```nix
+  secrets.github_token = { owner = "jlor"; };   # → /run/secrets/github_token
+  ```
 
-# 2. The desktop's key, generated automatically on first boot
-sudo age-keygen -y /var/lib/sops-nix/key.txt     # prints its public key
-
-# 3. Put both public keys (age1...) into .sops.yaml, then create the secrets file
-cd ~/nixos-config
-sops secrets/secrets.yaml                          # opens vim; add e.g.  github_token: abc123
-git add .sops.yaml secrets/secrets.yaml && git commit -m "Add secrets" && git push
-```
-
-Use a secret by declaring it in `secrets.nix`:
-
-```nix
-sops.secrets.github_token = { owner = "jlor"; };   # → /run/secrets/github_token
-```
-
-Then point whatever needs it at that path. Edit secrets any time with
-`sops secrets/secrets.yaml`. If you reinstall the PC, the desktop gets a new key: put its
-new public key in `.sops.yaml` and run `sops updatekeys secrets/secrets.yaml`.
+  then point whatever needs it at that path.
+- Already in use: `git_email`, rendered into a git config snippet that git includes.
+- After a reinstall the desktop has a new key; bootstrap swaps it into `.sops.yaml` and
+  re-encrypts the file (`sops updatekeys`). That needs your personal key, so keep it safe.
 
 ## Battle.net
 

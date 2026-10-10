@@ -1,5 +1,5 @@
 # Who can decrypt the secrets in this repo. Only public keys go here (safe to commit).
-# Replace both placeholders during setup: README.md → "Secrets".
+# The bootstrap (README → Install) fills these in; on a reinstall it swaps in the new desktop key.
 #   jlor:    your personal key, to create and edit secrets
 #   desktop: the desktop's own key, so it can decrypt at boot
 keys:
