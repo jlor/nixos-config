@@ -19,33 +19,45 @@ terminal. Everything, dotfiles included, is deployed from this repo by comin.
 | `config/zsh/spaceship.zsh` | Shell prompt (Spaceship) |
 | `templates/` | Project dev shells (`devshell node` etc.) |
 | `secrets.nix`, `.sops.yaml`, `secrets/` | Encrypted secrets (sops + age) |
+| `security.nix` | 1Password, YubiKey (touch-to-sudo, disk unlock) |
 | `.github/workflows/ci.yml`, `ci/` | CI: checks every push and pull request |
 | `renovate.json` | Weekly update PRs (flake inputs, GitHub Actions) |
 | `wallpapers/` | Landscape + portrait wallpapers (desktop and login screen) |
 
 ## Install
 
-The same steps work for the first install and for a reinstall.
+The same steps work for the first install and for a reinstall. Have your YubiKey plugged in
+and your 1Password login (email, Secret Key, password) at hand.
 
 1. **BIOS:** see "BIOS" at the end (EXPO, Resizable BAR, monitors on the 5090).
 2. **Install NixOS** from the 26.05 graphical ISO. If it hangs with the 5090, pick the
    `nomodeset` boot entry (the installer doesn't have the open Nvidia driver yet).
-   Partition as you like, create the user **`jlor`**, and reboot into the new system.
-3. **Reinstall only:** have your personal age key ready (from your password manager).
-4. **Run the bootstrap**, as jlor, in a terminal:
+   In the partitioning step:
+   - **Erase disk**, and tick **Encrypt system** with a strong passphrase. This can only
+     be chosen now; the YubiKey is added on top later, and the passphrase stays as fallback.
+   - **Swap: "No swap"**. The config uses compressed RAM swap (zram), and an encrypted
+     swap partition from the installer wouldn't carry over and would stall the boot.
+
+   Create the user **`jlor`**, and reboot into the new system.
+3. **Run the bootstrap**, as jlor, in a terminal:
 
    ```sh
    nix --extra-experimental-features "nix-command flakes" run github:jlor/nixos-config#bootstrap
    ```
 
-   It clones the repo to `~/nixos-config`, adds this machine's hardware config, sets up
-   the sops keys and secrets (asking for your git email the first time, or your age key
-   on a reinstall), builds the full system, and offers to commit and push the result.
-   It's safe to run again. Read [`bootstrap.sh`](bootstrap.sh) for the details.
-5. **Reboot.** You'll get the boot splash, then the graphical login: pick
-   **Hyprland (UWSM)** as the session (it's remembered). Check the driver with `nvidia-smi`.
-6. **First install only:** store the personal age key the bootstrap printed in your
-   password manager. Without it the secrets can't be opened on the next reinstall.
+   It clones the repo to `~/nixos-config`, adds this machine's hardware config, and sets
+   up the sops keys and secrets. Your personal age key is generated and stored in
+   1Password the first time, and fetched from it on a reinstall (or pasted, if you'd
+   rather not sign in). With the YubiKey plugged in, it also registers it for
+   touch-to-sudo, enrolls it to unlock the disk, and can add it as a second key for the
+   secrets. Then it builds the full system and offers to commit and push the result.
+   Every step is skipped when already done, so it's safe to re-run. Read
+   [`bootstrap.sh`](bootstrap.sh) for the details.
+4. **Reboot.** Touch the YubiKey (or type the passphrase) to unlock the disk, then pick
+   **Hyprland (UWSM)** at the login screen (it's remembered). Check the driver with
+   `nvidia-smi`.
+5. **Finish 1Password** in the app (see "1Password" below): switch on the SSH agent and
+   CLI integration, and set up commit signing.
 
 ## What to back up
 
@@ -53,14 +65,48 @@ The repo restores the whole system and every setting. These live outside it:
 
 | What | Where | Why |
 |---|---|---|
-| Your personal age key | `~/.config/sops/age/keys.txt` | Only way to open the secrets after a reinstall. Keep it in your password manager. |
-| Your home folder's data | `~/` (documents, projects, `~/.ssh`) | Personal files aren't config. Code lives in git remotes anyway. |
+| Your personal age key | 1Password, item "nixos-config age key" | Only way (besides the YubiKey, if added) to open the secrets after a reinstall. Bootstrap stores it there. |
+| Your YubiKey | Your keychain | Optional second key for the secrets; touch-to-sudo and disk unlock fall back to passwords without it. |
+| Disk passphrase | 1Password | Unlocks the disk when the YubiKey isn't at hand. |
+| Your home folder's data | `~/` (documents, projects) | Personal files aren't config. Code lives in git remotes anyway. SSH keys live in 1Password. |
 | Game libraries | `~/.local/share/Steam`, Lutris prefixes | Large but re-downloadable; back up save games that don't use cloud saves. |
-| App logins | Firefox, Discord, WhatsApp, Steam, Claude Code, `gh` | Sign in again after a reinstall. Firefox Sync covers the browser. |
+| App logins | 1Password, Firefox, Discord, WhatsApp, Steam, Claude Code, `gh` | Sign in again after a reinstall. Firefox Sync covers the browser. |
 | Local AI models | `/var/lib/ollama` | Re-downloaded automatically after a reinstall. |
 
 Not needed: the desktop's own age key (a reinstall makes a new one, and bootstrap
-re-encrypts the secrets for it) and `hardware-configuration.nix` (regenerated).
+re-encrypts the secrets for it), `hardware-configuration.nix` (regenerated), and the YubiKey
+registrations (stored encrypted in the repo; disk enrollment is redone by bootstrap).
+
+## 1Password
+
+The app, the `op` CLI and the Firefox extension are installed by the config, and the app
+starts with Hyprland (in the tray). One-time steps in the app after signing in:
+
+1. **Settings → Developer → "Use the SSH agent"**: your SSH keys stay in 1Password and
+   ssh/git use them through `~/.1password/agent.sock` (already configured).
+2. **Settings → Developer → "Integrate with 1Password CLI"**: `op` and Walker unlock
+   through the app instead of asking for your password.
+3. **Commit signing:** create an SSH key in 1Password (or use your existing one), add it to
+   GitHub as both an *authentication* and a *signing* key (Settings → SSH and GPG keys),
+   and put its public key in `home.nix` → `sshSigningKey`. Commits then show "Verified".
+
+In Walker, type `*` and a name to find a login and copy its password; the clipboard is
+cleared after 5 seconds. Vaults searched: `config/elephant/1password.toml`.
+
+## YubiKey
+
+| Use | How |
+|---|---|
+| sudo, the lock screen, admin prompts | Touch the key instead of typing your password (password still works) |
+| Disk unlock at boot | Touch the key (PIN if set), or type the passphrase |
+| Secrets (optional) | Opens `secrets/secrets.yaml` like your 1Password key does |
+
+The login screen still asks for your password, because that also unlocks the keyring.
+`ykman info` shows the key's state. The bootstrap registers one YubiKey. A replacement or
+second key needs a manual step (passwords keep working meanwhile):
+`pamu2fcfg -n -o pam://desktop -i pam://desktop` appends to `u2f_keys` in
+`sops secrets/secrets.yaml`, and `sudo systemd-cryptenroll --fido2-device=auto <disk>` adds
+it to the disk.
 
 ## Look & feel
 
@@ -91,6 +137,7 @@ mode (same as Omarchy):
 | `@` | Web search |
 | `+` | Switch to an open window |
 | `>` | Run a command |
+| `*` | 1Password: copy a password |
 | `;` | List all modes |
 
 The power menu (Super + Escape, or ⏻ in the bar) is a Walker menu defined in
@@ -238,17 +285,21 @@ Requires the Renovate GitHub App: install it from
 Secrets are stored encrypted in `secrets/secrets.yaml`, so they can live in this public
 repo. At boot, sops-nix decrypts them with the desktop's own key into `/run/secrets/`
 (in RAM, never in the Nix store). Two keys can decrypt: yours, to edit, and the desktop's,
-to use them. Both are set up by the bootstrap; nothing to do by hand.
+to use them, plus optionally your YubiKey. All set up by the bootstrap.
 
 - Edit secrets: `sops secrets/secrets.yaml` (decrypts into vim, re-encrypts on save).
-- Use a secret: declare it in `secrets.nix`, inside the `hasSecrets` block:
+- Use a secret: add it with `sops`, then declare it in `secrets.nix`:
 
   ```nix
-  secrets.github_token = { owner = "jlor"; };   # → /run/secrets/github_token
+  (lib.mkIf (has "github_token") { secrets.github_token = { owner = "jlor"; }; })
+  # → /run/secrets/github_token
   ```
 
   then point whatever needs it at that path.
-- Already in use: `git_email`, rendered into a git config snippet that git includes.
+- Already in use: `git_email` (rendered into a git config snippet that git includes) and
+  `u2f_keys` (the YubiKey registration for touch-to-sudo).
+- A secret's feature switches on by itself once the key exists in the file: `secrets.nix`
+  reads the key names, which sops leaves unencrypted.
 - After a reinstall the desktop has a new key; bootstrap swaps it into `.sops.yaml` and
   re-encrypts the file (`sops updatekeys`). That needs your personal key, so keep it safe.
 

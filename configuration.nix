@@ -167,6 +167,9 @@ in
 
   hardware.bluetooth.enable = true;
   hardware.bluetooth.powerOnBoot = true;
+  # Bluetooth manager (Waybar's Bluetooth icon opens it). Enabled as a service, not
+  # just a package: its system helper is what applies pairings and settings.
+  services.blueman.enable = true;
 
   services.printing.enable = true;
   services.fstrim.enable = true;           # SSD trim for the T700
@@ -242,7 +245,6 @@ in
     waybar                # status bar
     mako                  # notifications
     swaybg                # wallpaper (per monitor)
-    hyprlock              # lock screen
     hypridle              # idle -> lock
     hyprpolkitagent       # password prompts for GUI apps
     grim slurp wl-clipboard   # screenshots + clipboard (Walker keeps the history)
@@ -250,7 +252,6 @@ in
     brightnessctl playerctl
     pavucontrol           # audio settings
     networkmanagerapplet  # wifi tray icon
-    blueman               # bluetooth GUI
     nautilus              # file manager
     nvidia-vaapi-driver
     xrandr                # sets primary monitor for XWayland games
