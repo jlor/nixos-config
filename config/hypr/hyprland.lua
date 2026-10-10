@@ -41,6 +41,8 @@ hl.on("hyprland.start", function()
     hl.exec_cmd("hypridle")
     hl.exec_cmd("systemctl --user start hyprpolkitagent")
     hl.exec_cmd("nm-applet --indicator")
+    -- 1Password in the tray: keeps the SSH agent and browser/CLI integration available
+    hl.exec_cmd("1password --silent")
     -- Mark the left screen primary for X11 games (Battle.net, Wine).
     hl.exec_cmd("xrandr --output DP-1 --primary")
 end)
