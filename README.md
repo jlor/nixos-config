@@ -18,6 +18,7 @@ terminal. Everything, dotfiles included, is deployed from this repo by comin.
 | `templates/` | Project dev shells (`devshell node` etc.) |
 | `secrets.nix`, `.sops.yaml`, `secrets/` | Encrypted secrets (sops + age) |
 | `.github/workflows/ci.yml`, `ci/` | CI: checks every push and pull request |
+| `renovate.json` | Weekly update PRs (flake inputs, GitHub Actions) |
 | `wallpapers/` | Landscape + portrait wallpapers (desktop and login screen) |
 
 ## Install
@@ -180,6 +181,21 @@ anything that fails to build on the machine itself.
 To make sure only checked commits reach the desktop, work on a branch and merge through a
 pull request, then require the check: Settings → Branches → add a rule for `main` →
 "Require status checks to pass" → select **Evaluate NixOS config**.
+
+## Updates (Renovate)
+
+[`renovate.json`](renovate.json) opens update pull requests every Monday morning:
+
+- **flake inputs:** one PR updating `flake.lock` (nixpkgs, home-manager, sops-nix, comin)
+- **GitHub Actions:** one PR bumping the workflow action versions
+
+CI evaluates each PR; merge it and comin deploys the update. The Dependency Dashboard
+issue Renovate creates lists everything pending and lets you trigger a run early.
+Major NixOS release bumps (e.g. `nixos-26.05` → `nixos-26.11`) stay manual: change the
+branch names in `flake.nix` and read the release notes first.
+
+Requires the Renovate GitHub App: install it from
+[github.com/apps/renovate](https://github.com/apps/renovate) for `nixos-config`.
 
 ## Secrets (sops + age)
 

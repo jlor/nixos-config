@@ -1,0 +1,24 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": ["config:recommended"],
+  "description": "Weekly update PRs for flake inputs and GitHub Actions. CI evaluates each PR; merging it lets comin deploy.",
+  "timezone": "Europe/Copenhagen",
+  "schedule": ["before 6am on monday"],
+  "labels": ["dependencies"],
+  "nix": {
+    "enabled": true
+  },
+  "ignorePaths": ["templates/**"],
+  "packageRules": [
+    {
+      "description": "All flake.lock updates (nixpkgs, home-manager, sops-nix, comin) in one PR",
+      "matchManagers": ["nix"],
+      "groupName": "flake inputs"
+    },
+    {
+      "description": "All GitHub Actions bumps in one PR",
+      "matchManagers": ["github-actions"],
+      "groupName": "GitHub Actions"
+    }
+  ]
+}
