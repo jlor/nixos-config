@@ -1,0 +1,61 @@
+# Checks that the NixOS config and the dev shell templates evaluate.
+# Catches broken options, removed/renamed packages and typos before comin
+# tries to deploy them. It evaluates rather than builds: a full build of this
+# desktop (Nvidia, Steam, CUDA) is too big for a free GitHub runner, and
+# evaluation is where almost all config errors show up.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  evaluate:
+    name: Evaluate NixOS config
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: cachix/install-nix-action@v31
+
+      # hardware-configuration.nix only exists once the PC is installed. Until it's
+      # committed, CI uses a stand-in (the real config never sees this file).
+      - name: Stand-in hardware config (CI only)
+        run: |
+          if [ ! -f hardware-configuration.nix ]; then
+            echo "::notice::hardware-configuration.nix not committed yet, using ci/hardware-configuration.nix"
+            cp ci/hardware-configuration.nix hardware-configuration.nix
+            git add hardware-configuration.nix   # flakes only see files known to git
+          fi
+
+      - name: Flake check (evaluates the system and home-manager config)
+        run: nix flake check --no-build --show-trace
+
+      - name: Evaluate system closure
+        run: |
+          drv=$(nix eval --raw .#nixosConfigurations.desktop.config.system.build.toplevel.drvPath)
+          echo "System derivation: $drv"
+          echo "### ✅ desktop evaluates" >> "$GITHUB_STEP_SUMMARY"
+          echo "\`$drv\`" >> "$GITHUB_STEP_SUMMARY"
+
+  templates:
+    name: Dev shell templates
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        template: [default, node, java, python, go]
+    steps:
+      - uses: actions/checkout@v7
+      - uses: cachix/install-nix-action@v31
+      - name: Evaluate ${{ matrix.template }} dev shell
+        run: nix eval --raw "path:./templates/${{ matrix.template }}#devShells.x86_64-linux.default.drvPath"

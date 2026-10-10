@@ -16,6 +16,8 @@ terminal. Everything, dotfiles included, is deployed from this repo by comin.
 | `config/walker/`, `config/elephant/` | Launcher theme, power menu |
 | `config/zsh/spaceship.zsh` | Shell prompt (Spaceship) |
 | `templates/` | Project dev shells (`devshell node` etc.) |
+| `secrets.nix`, `.sops.yaml`, `secrets/` | Encrypted secrets (sops + age) |
+| `.github/workflows/ci.yml`, `ci/` | CI: checks every push and pull request |
 | `wallpapers/` | Landscape + portrait wallpapers (desktop and login screen) |
 
 ## Install
@@ -165,6 +167,52 @@ Tips:
 - Try risky changes on a testing branch first (see comin's docs on testing branches).
 - Updating Nvidia drivers or the kernel needs a reboot, and games may misbehave
   until you do. Avoid pushing those changes mid-session.
+
+## CI
+
+Every push and pull request runs [`.github/workflows/ci.yml`](.github/workflows/ci.yml),
+which evaluates the full system (including home-manager) and every dev shell template.
+That catches broken options, removed or renamed packages and typos, which covers nearly
+everything that can go wrong in a config. It doesn't do a full build: this desktop
+(Nvidia, Steam, CUDA) is too big for a free GitHub runner. Comin still refuses to deploy
+anything that fails to build on the machine itself.
+
+To make sure only checked commits reach the desktop, work on a branch and merge through a
+pull request, then require the check: Settings → Branches → add a rule for `main` →
+"Require status checks to pass" → select **Evaluate NixOS config**.
+
+## Secrets (sops + age)
+
+Secrets are stored encrypted in `secrets/secrets.yaml`, so they can live in this public
+repo. At boot, sops-nix decrypts them with the desktop's own key into `/run/secrets/`
+(in RAM, never in the Nix store). Two keys can decrypt: yours, to edit, and the desktop's,
+to use them.
+
+One-time setup, after the first rebuild on the PC:
+
+```sh
+# 1. Your personal key (back it up, e.g. in your password manager)
+mkdir -p ~/.config/sops/age
+age-keygen -o ~/.config/sops/age/keys.txt        # prints your public key
+
+# 2. The desktop's key, generated automatically on first boot
+sudo age-keygen -y /var/lib/sops-nix/key.txt     # prints its public key
+
+# 3. Put both public keys (age1...) into .sops.yaml, then create the secrets file
+cd ~/nixos-config
+sops secrets/secrets.yaml                          # opens vim; add e.g.  github_token: abc123
+git add .sops.yaml secrets/secrets.yaml && git commit -m "Add secrets" && git push
+```
+
+Use a secret by declaring it in `secrets.nix`:
+
+```nix
+sops.secrets.github_token = { owner = "jlor"; };   # → /run/secrets/github_token
+```
+
+Then point whatever needs it at that path. Edit secrets any time with
+`sops secrets/secrets.yaml`. If you reinstall the PC, the desktop gets a new key: put its
+new public key in `.sops.yaml` and run `sops updatekeys secrets/secrets.yaml`.
 
 ## Battle.net
 

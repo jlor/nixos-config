@@ -251,6 +251,10 @@
     bat
     fastfetch
 
+    # Secrets (see secrets.nix)
+    sops
+    age
+
     # AI
     claude-code
   ];
