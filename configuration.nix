@@ -191,11 +191,39 @@ in
   nixpkgs.config.allowUnfree = true;       # Nvidia, Steam, VS Code, Discord
 
   programs.firefox.enable = true;
-  programs.git.enable = true;
+  programs.git.enable = true;              # system-wide git (your settings: home.nix)
 
   programs.direnv = {
     enable = true;
     nix-direnv.enable = true;              # per-project dev shells
+  };
+
+  # zsh is the login shell (configured per user in home.nix)
+  programs.zsh.enable = true;
+
+  # vim as the system editor too (root, sudoedit)
+  programs.vim = {
+    enable = true;
+    defaultEditor = true;
+  };
+
+  # Lets prebuilt Linux binaries run on NixOS. asdf downloads these
+  # (Node.js, Java, ...), and they won't start without it.
+  programs.nix-ld.enable = true;
+
+  ############################################################
+  # Local AI: Ollama on the RTX 5090 (CUDA)
+  ############################################################
+  services.ollama = {
+    enable = true;
+    package = pkgs.ollama-cuda;
+    environmentVariables = {
+      OLLAMA_CONTEXT_LENGTH = "65536";     # Claude Code needs a long context
+      OLLAMA_FLASH_ATTENTION = "1";
+      OLLAMA_KV_CACHE_TYPE = "q8_0";       # halves context memory, fits 64k in VRAM
+    };
+    # Pulled in the background after boot (~19 GB, once). Fits the 5090's 32 GB VRAM.
+    loadModels = [ "qwen3-coder:30b" ];
   };
 
   environment.systemPackages = with pkgs; [
@@ -204,8 +232,7 @@ in
     mangohud        # FPS overlay: mangohud %command%
     protonup-qt
 
-    # Development
-    gh
+    # Development (gh, vim, git, asdf and Claude Code are set up per user in home.nix)
     vscode
     nixd            # Nix language server for VS Code
     nixfmt
@@ -250,6 +277,7 @@ in
   users.users.${username} = {
     isNormalUser = true;
     description = username;
+    shell = pkgs.zsh;
     extraGroups = [ "wheel" "networkmanager" "gamemode" ];
   };
 
@@ -259,6 +287,10 @@ in
   nix.settings = {
     experimental-features = [ "nix-command" "flakes" ];
     auto-optimise-store = true;
+    # Prebuilt CUDA packages (Ollama). The default cache doesn't carry CUDA,
+    # so without this they compile from source for hours.
+    substituters = [ "https://cache.nixos-cuda.org" ];
+    trusted-public-keys = [ "cache.nixos-cuda.org:74DUi4Ye579gUqzH4ziL9IyiJBlDpMRn9MBN8oNan9M=" ];
   };
   nix.gc = {
     automatic = true;

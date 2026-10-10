@@ -13,7 +13,7 @@ terminal. Everything, dotfiles included, is deployed from this repo by comin.
 | `config/hypr/` | Hyprland (`hyprland.lua`), lock screen, idle settings |
 | `config/waybar/` | Top bar + power menu |
 | `config/kitty/`, `config/fuzzel/`, `config/mako/` | Terminal, launcher, notifications |
-| `config/starship.toml` | Shell prompt |
+| `config/p10k.zsh` | Shell prompt (Powerlevel10k, lean) |
 | `wallpapers/` | Landscape + portrait wallpapers (desktop and login screen) |
 
 ## Install
@@ -35,11 +35,50 @@ terminal. Everything, dotfiles included, is deployed from this repo by comin.
   spring animations; separate wallpapers for the landscape and portrait screens.
 - **Lock screen:** blurred snapshot of your desktop, big clock, frosted password field.
   Locks after 10 min idle, screens off after 15. Fullscreen games and videos pause this.
-- **Terminal:** kitty with a trailing-cursor animation and the Starship prompt; `ls`, `ll`
-  and `tree` use eza with icons, `cat` uses bat. Run `fastfetch` for a system summary.
+- **Terminal:** kitty with a trailing-cursor animation, zsh with the Powerlevel10k lean
+  prompt (see "Terminal" below).
 
 Changing the look: edit files in `config/`, push, and comin applies it.
 Reload Hyprland with `hyprctl reload`, and Waybar with `pkill waybar; waybar &`.
+
+## Terminal
+
+- **Shell:** zsh with Powerlevel10k (lean preset in `config/p10k.zsh`), autosuggestions and
+  syntax highlighting. Change the prompt by editing `config/p10k.zsh` and pushing
+  (`p10k configure` can't write into the Nix-managed files).
+- **cd = zoxide:** `cd proj` jumps to the most-used directory matching "proj";
+  `cdi` picks interactively. Plain paths work as before.
+- **Editor:** vim everywhere (`$EDITOR`, git, sudoedit), Catppuccin colours, persistent undo.
+- **Aliases:** `ls`/`ll`/`tree` use eza, `cat` uses bat, `vi` is vim. `fastfetch` shows a system summary.
+- **Git:** set up for the command line, with `gh` handling GitHub logins. Your email is kept
+  out of this public repo, so set it once after install:
+  `git config --file ~/.config/git/local user.email "you@example.com"`
+  (GitHub's noreply address from Settings → Emails keeps it private on commits too.)
+
+### asdf (language versions)
+
+```sh
+asdf plugin add nodejs
+asdf install nodejs latest
+asdf set nodejs latest        # writes .tool-versions in the current project
+```
+
+asdf downloads prebuilt binaries; `nix-ld` (enabled in `configuration.nix`) is what lets
+them run on NixOS. If a tool still fails to start, it's usually missing a library: add it
+to `programs.nix-ld.libraries`.
+
+## AI
+
+- **Claude Code:** `claude` (log in on first run).
+- **Local models:** Ollama runs on the 5090 with CUDA and downloads `qwen3-coder:30b`
+  (~19 GB) in the background after the first boot; `ollama ps` shows what's loaded.
+  - `claude-local` runs Claude Code against the local model instead of Anthropic's API.
+    Pick another model with `CLAUDE_LOCAL_MODEL=<name> claude-local`.
+  - `ollama run qwen3-coder:30b` for a plain chat in the terminal.
+  - Local models are far weaker than Claude at multi-step coding; good for offline use,
+    quick questions and privacy-sensitive code.
+- CUDA builds come from `cache.nixos-cuda.org` (set in `configuration.nix`), so Ollama
+  doesn't have to compile on your machine.
 
 ## Hyprland keys
 
