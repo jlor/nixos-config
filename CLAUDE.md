@@ -23,6 +23,9 @@ A reinstall must get back to the known state with: install NixOS, run
   switches within a minute. Treat every merge as a production deploy.
 - `main` is protected: the "Evaluate NixOS config" CI check must pass. Work on a
   branch and open a PR; never push to `main` directly.
+- Trunk-based: every PR targets `main` and is squash-merged (the only merge option).
+  Never stack PRs on other PR branches. If a change depends on an open PR, wait until
+  that one is merged, then branch from the updated `main`.
 - Kernel and Nvidia driver changes need a reboot and can break a running game.
   Call that out in the PR description.
 
