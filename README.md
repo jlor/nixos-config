@@ -159,9 +159,11 @@ Bootstrap (one time, on the freshly installed PC):
 3. `cp /etc/nixos/hardware-configuration.nix . && git add hardware-configuration.nix`
 4. `sudo nixos-rebuild switch --flake .#desktop` (this also creates `flake.lock`)
 5. `git add flake.lock && git commit -m "Add hardware config and lock file" && git push`
+   (a direct push to `main` is allowed here because you're the repo admin)
 
-From then on, just push. The repo is public, so comin needs no token. Never commit
-secrets (passwords, tokens, SSH keys) here; if you need them later, use sops-nix or agenix.
+From then on, changes go through pull requests (see CI below). The repo is public, so
+comin needs no token. Never commit plaintext secrets (passwords, tokens, SSH keys) here;
+use sops (see Secrets below).
 
 Tips:
 - `comin status` shows what's deployed and what's pending.
@@ -178,9 +180,19 @@ everything that can go wrong in a config. It doesn't do a full build: this deskt
 (Nvidia, Steam, CUDA) is too big for a free GitHub runner. Comin still refuses to deploy
 anything that fails to build on the machine itself.
 
-To make sure only checked commits reach the desktop, work on a branch and merge through a
-pull request, then require the check: Settings → Branches → add a rule for `main` →
-"Require status checks to pass" → select **Evaluate NixOS config**.
+`main` is protected: a commit can only land there once **Evaluate NixOS config** has
+passed, so comin only ever deploys checked commits. The usual flow:
+
+```sh
+git switch -c my-change
+# edit, then
+git commit -am "Describe the change" && git push
+gh pr create --fill        # CI runs on the PR
+gh pr merge --squash       # once it's green; comin deploys within a minute
+```
+
+As repo admin you can still push straight to `main` in an emergency (the rule isn't
+enforced for admins), but then nothing checks the commit first.
 
 ## Updates (Renovate)
 
