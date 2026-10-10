@@ -47,6 +47,10 @@ jobs:
           echo "### ✅ desktop evaluates" >> "$GITHUB_STEP_SUMMARY"
           echo "\`$drv\`" >> "$GITHUB_STEP_SUMMARY"
 
+      # Small build: wraps bootstrap.sh and runs shellcheck on it.
+      - name: Build bootstrap app (shellcheck)
+        run: nix build .#bootstrap --print-build-logs
+
   templates:
     name: Dev shell templates
     runs-on: ubuntu-latest

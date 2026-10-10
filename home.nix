@@ -193,9 +193,9 @@
       diff.colorMoved = "default";
       core.editor = "vim";
     };
-    # Your email is kept out of this public repo. Set it once with:
-    #   git config --file ~/.config/git/local user.email "you@example.com"
-    includes = [ { path = "~/.config/git/local"; } ];
+    # Your email lives encrypted in secrets/secrets.yaml (git_email); sops-nix renders
+    # it to this file at boot (see secrets.nix). Change it with `sops secrets/secrets.yaml`.
+    includes = [ { path = "/run/secrets/rendered/git-identity"; } ];
   };
 
   programs.gh = {
