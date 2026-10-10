@@ -20,6 +20,15 @@
   };
 
   outputs = { self, nixpkgs, home-manager, comin, ... }: {
+    # Project dev shells: `devshell <name>` (or `nix flake init -t github:jlor/nixos-config#<name>`)
+    templates = {
+      default = { path = ./templates/default; description = "Empty dev shell to fill in"; };
+      node    = { path = ./templates/node;    description = "Node.js 24 + pnpm"; };
+      java    = { path = ./templates/java;    description = "JDK 21 + Gradle + Maven"; };
+      python  = { path = ./templates/python;  description = "Python 3.13 + uv + ruff"; };
+      go      = { path = ./templates/go;      description = "Go + gopls + golangci-lint"; };
+    };
+
     # The attribute name must match networking.hostName ("desktop"),
     # because comin picks the configuration by hostname.
     nixosConfigurations.desktop = nixpkgs.lib.nixosSystem {

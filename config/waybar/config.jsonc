@@ -14,7 +14,7 @@
   "custom/logo": {
     "format": "",
     "tooltip": false,
-    "on-click": "fuzzel"
+    "on-click": "walker"
   },
 
   "hyprland/workspaces": {
@@ -97,6 +97,6 @@
   "custom/power": {
     "format": "⏻",
     "tooltip": false,
-    "on-click": "sh ~/.config/waybar/power-menu.sh"
+    "on-click": "walker -m menus:power"
   }
 }

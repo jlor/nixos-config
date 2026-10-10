@@ -6,7 +6,7 @@ local home = os.getenv("HOME")
 local wallpapers = home .. "/.local/share/wallpapers/"
 
 local terminal    = "kitty"
-local menu        = "fuzzel"
+local menu        = "walker"
 local fileManager = "nautilus"
 local mainMod     = "SUPER"
 
@@ -41,7 +41,6 @@ hl.on("hyprland.start", function()
     hl.exec_cmd("hypridle")
     hl.exec_cmd("systemctl --user start hyprpolkitagent")
     hl.exec_cmd("nm-applet --indicator")
-    hl.exec_cmd("wl-paste --watch cliphist store")
     -- Mark the left screen primary for X11 games (Battle.net, Wine).
     hl.exec_cmd("xrandr --output DP-1 --primary")
 end)
@@ -181,27 +180,28 @@ hl.window_rule({
     size   = { 960, 640 },
 })
 
--- Frosted glass behind the bar, launcher and notifications.
+-- Frosted glass behind the bar, launcher (Walker) and notifications.
 hl.layer_rule({ match = { namespace = "waybar" },        blur = true, ignore_alpha = 0.1 })
-hl.layer_rule({ match = { namespace = "launcher" },      blur = true, ignore_alpha = 0.1 })
+hl.layer_rule({ match = { namespace = "walker" },        blur = true, ignore_alpha = 0.1 })
 hl.layer_rule({ match = { namespace = "notifications" }, blur = true, ignore_alpha = 0.1 })
 
 -------------------
 --- KEYBINDINGS ---
 -------------------
 hl.bind(mainMod .. " + Return", hl.dsp.exec_cmd(terminal))
-hl.bind(mainMod .. " + D",      hl.dsp.exec_cmd(menu))
+hl.bind(mainMod .. " + Space",  hl.dsp.exec_cmd(menu))                       -- launcher (Omarchy style)
 hl.bind(mainMod .. " + E",      hl.dsp.exec_cmd(fileManager))
 hl.bind(mainMod .. " + Q",      hl.dsp.window.close())
 hl.bind(mainMod .. " + F",      hl.dsp.window.fullscreen({ action = "toggle" }))
 hl.bind(mainMod .. " + V",      hl.dsp.window.float({ action = "toggle" }))
 hl.bind(mainMod .. " + J",      hl.dsp.layout("togglesplit"))
 hl.bind(mainMod .. " + L",      hl.dsp.exec_cmd("loginctl lock-session"))
-hl.bind(mainMod .. " + Escape", hl.dsp.exec_cmd("sh " .. home .. "/.config/waybar/power-menu.sh"))
+hl.bind(mainMod .. " + Escape", hl.dsp.exec_cmd("walker -m menus:power"))   -- power menu
 hl.bind(mainMod .. " + SHIFT + E", hl.dsp.exit())
 
--- Clipboard history picker
-hl.bind(mainMod .. " + C", hl.dsp.exec_cmd("cliphist list | fuzzel --dmenu --prompt '󰅌  ' | cliphist decode | wl-copy"))
+-- Walker modes: clipboard history and emoji/symbols
+hl.bind(mainMod .. " + C",         hl.dsp.exec_cmd("walker -m clipboard"))
+hl.bind(mainMod .. " + CTRL + E",  hl.dsp.exec_cmd("walker -m symbols"))
 
 -- Screenshots: region -> clipboard, full screen -> ~/Pictures
 hl.bind("Print", hl.dsp.exec_cmd('grim -g "$(slurp)" - | wl-copy && notify-send "Screenshot copied"'))

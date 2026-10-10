@@ -12,8 +12,10 @@ terminal. Everything, dotfiles included, is deployed from this repo by comin.
 | `home.nix` | Your user: links the dotfiles below, GTK theme, cursor, shell |
 | `config/hypr/` | Hyprland (`hyprland.lua`), lock screen, idle settings |
 | `config/waybar/` | Top bar + power menu |
-| `config/kitty/`, `config/fuzzel/`, `config/mako/` | Terminal, launcher, notifications |
-| `config/p10k.zsh` | Shell prompt (Powerlevel10k, lean) |
+| `config/kitty/`, `config/mako/` | Terminal, notifications |
+| `config/walker/`, `config/elephant/` | Launcher theme, power menu |
+| `config/zsh/spaceship.zsh` | Shell prompt (Spaceship) |
+| `templates/` | Project dev shells (`devshell node` etc.) |
 | `wallpapers/` | Landscape + portrait wallpapers (desktop and login screen) |
 
 ## Install
@@ -35,17 +37,40 @@ terminal. Everything, dotfiles included, is deployed from this repo by comin.
   spring animations; separate wallpapers for the landscape and portrait screens.
 - **Lock screen:** blurred snapshot of your desktop, big clock, frosted password field.
   Locks after 10 min idle, screens off after 15. Fullscreen games and videos pause this.
-- **Terminal:** kitty with a trailing-cursor animation, zsh with the Powerlevel10k lean
-  prompt (see "Terminal" below).
+- **Terminal:** kitty with a trailing-cursor animation, zsh with the Spaceship prompt
+  (see "Terminal" below).
 
 Changing the look: edit files in `config/`, push, and comin applies it.
 Reload Hyprland with `hyprctl reload`, and Waybar with `pkill waybar; waybar &`.
 
+## Launcher (Walker)
+
+**Super + Space** opens Walker, which searches apps by default. Type a prefix to switch
+mode (same as Omarchy):
+
+| Prefix | Mode |
+|---|---|
+| `.` | Files in your home folder |
+| `:` | Emoji & symbols |
+| `=` | Calculator |
+| `$` | Clipboard history |
+| `@` | Web search |
+| `+` | Switch to an open window |
+| `>` | Run a command |
+| `;` | List all modes |
+
+The power menu (Super + Escape, or ⏻ in the bar) is a Walker menu defined in
+`config/elephant/menus/power.toml`; add your own menus next to it.
+
 ## Terminal
 
-- **Shell:** zsh with Powerlevel10k (lean preset in `config/p10k.zsh`), autosuggestions and
-  syntax highlighting. Change the prompt by editing `config/p10k.zsh` and pushing
-  (`p10k configure` can't write into the Nix-managed files).
+- **Shell:** zsh with the Spaceship prompt, autosuggestions and syntax highlighting.
+  The prompt ends in 👍 when the last command succeeded and 👎 when it failed. It shows
+  git status, the active Nix dev shell, and language/tool versions (node, java, kubectl,
+  terraform, ...) when they apply. Settings: `config/zsh/spaceship.zsh`.
+- **fzf:** Ctrl+R searches history, Ctrl+T inserts a file path, Alt+C jumps into a
+  directory. Uses fd, so it respects `.gitignore`.
+- **Search tools:** `rg` (ripgrep, smart-case, includes dotfiles), `fd` (find), `jq` (JSON).
 - **cd = zoxide:** `cd proj` jumps to the most-used directory matching "proj";
   `cdi` picks interactively. Plain paths work as before.
 - **Editor:** vim everywhere (`$EDITOR`, git, sudoedit), Catppuccin colours, persistent undo.
@@ -55,17 +80,26 @@ Reload Hyprland with `hyprctl reload`, and Waybar with `pkill waybar; waybar &`.
   `git config --file ~/.config/git/local user.email "you@example.com"`
   (GitHub's noreply address from Settings → Emails keeps it private on commits too.)
 
-### asdf (language versions)
+### Project environments (direnv + Nix dev shells)
+
+Each project declares its tools in a `flake.nix`, with exact versions pinned in
+`flake.lock`. direnv loads them when you `cd` into the project and unloads them when you
+leave. Commit both files and the whole team, CI included, gets identical tools.
 
 ```sh
-asdf plugin add nodejs
-asdf install nodejs latest
-asdf set nodejs latest        # writes .tool-versions in the current project
+mkdir myapp && cd myapp && git init
+devshell node        # or: java, python, go, default (empty)
+node --version       # available inside the folder only
 ```
 
-asdf downloads prebuilt binaries; `nix-ld` (enabled in `configuration.nix`) is what lets
-them run on NixOS. If a tool still fails to start, it's usually missing a library: add it
-to `programs.nix-ld.libraries`.
+- Change tools: edit `packages` in `flake.nix`; direnv reloads on the next prompt.
+  Find package names with `nix search nixpkgs <name>`.
+- Update versions: `nix flake update`, then commit `flake.lock`.
+- Other machines: `nix develop` gives the same shell without direnv.
+- Templates live in `templates/` in this repo; add your own there.
+
+`nix-ld` stays enabled for the odd prebuilt binary (VS Code extensions, npm packages with
+native parts).
 
 ## AI
 
@@ -85,7 +119,7 @@ to `programs.nix-ld.libraries`.
 | Keys | Action |
 |---|---|
 | Super + Enter | Terminal (kitty) |
-| Super + D | App launcher |
+| Super + Space | Launcher (Walker) |
 | Super + E | File manager |
 | Super + Q | Close window |
 | Super + F | Fullscreen |
@@ -97,6 +131,7 @@ to `programs.nix-ld.libraries`.
 | Super + Shift + 1–9 | Move window to workspace |
 | Super + S | Scratchpad (Shift: send window there) |
 | Super + C | Clipboard history |
+| Super + Ctrl + E | Emoji & symbols |
 | Super + L | Lock |
 | Super + Escape | Power menu (lock, log out, reboot, shut down) |
 | Super + Shift + E | Log out immediately |

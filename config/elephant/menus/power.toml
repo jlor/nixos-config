@@ -1,0 +1,31 @@
+# Power menu, opened with Super+Escape or the ⏻ button in Waybar:
+#   walker -m menus:power
+name = "power"
+name_pretty = "Power"
+icon = "system-shutdown"
+action = "%VALUE%"
+
+[[entries]]
+text = "Lock"
+icon = "system-lock-screen"
+value = "loginctl lock-session"
+
+[[entries]]
+text = "Log out"
+icon = "system-log-out"
+value = "hyprctl dispatch 'hl.dsp.exit()'"
+
+[[entries]]
+text = "Suspend"
+icon = "system-suspend"
+value = "systemctl suspend"
+
+[[entries]]
+text = "Reboot"
+icon = "system-reboot"
+value = "systemctl reboot"
+
+[[entries]]
+text = "Shut down"
+icon = "system-shutdown"
+value = "systemctl poweroff"

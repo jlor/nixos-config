@@ -193,11 +193,6 @@ in
   programs.firefox.enable = true;
   programs.git.enable = true;              # system-wide git (your settings: home.nix)
 
-  programs.direnv = {
-    enable = true;
-    nix-direnv.enable = true;              # per-project dev shells
-  };
-
   # zsh is the login shell (configured per user in home.nix)
   programs.zsh.enable = true;
 
@@ -207,8 +202,9 @@ in
     defaultEditor = true;
   };
 
-  # Lets prebuilt Linux binaries run on NixOS. asdf downloads these
-  # (Node.js, Java, ...), and they won't start without it.
+  # Lets prebuilt Linux binaries run on NixOS: VS Code extensions, npm packages
+  # with native parts, tools downloaded outside Nix. Project tools themselves
+  # come from Nix dev shells (see home.nix / templates/).
   programs.nix-ld.enable = true;
 
   ############################################################
@@ -232,7 +228,7 @@ in
     mangohud        # FPS overlay: mangohud %command%
     protonup-qt
 
-    # Development (gh, vim, git, asdf and Claude Code are set up per user in home.nix)
+    # Development (git, gh, vim, direnv, fzf, Claude Code etc. are set up per user in home.nix)
     vscode
     nixd            # Nix language server for VS Code
     nixfmt
@@ -244,14 +240,12 @@ in
     # Hyprland essentials
     kitty                 # terminal
     waybar                # status bar
-    fuzzel                # app launcher
     mako                  # notifications
     swaybg                # wallpaper (per monitor)
     hyprlock              # lock screen
     hypridle              # idle -> lock
     hyprpolkitagent       # password prompts for GUI apps
-    grim slurp wl-clipboard   # screenshots + clipboard
-    cliphist
+    grim slurp wl-clipboard   # screenshots + clipboard (Walker keeps the history)
     libnotify             # notify-send, used by the screenshot keys
     brightnessctl playerctl
     pavucontrol           # audio settings
