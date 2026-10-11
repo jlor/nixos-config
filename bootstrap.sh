@@ -255,8 +255,15 @@ step_rebuild() {
   say "7/9 Building the system (the first time takes a while)"
   nix flake lock
   git add flake.lock
-  # Evaluates and builds as you; only the activation step runs through sudo.
-  nixos-rebuild switch --sudo --flake ".#$HOST"
+  # The prebuilt-CUDA cache (configuration.nix → nix.settings) only takes effect once
+  # this build is active, and Nix accepts extra caches only from root. So the build
+  # runs as root with the cache passed in; otherwise Ollama's CUDA code compiles from
+  # source for hours. "path:" because root can't read your git checkout as a git repo.
+  # Keep the cache URL and key in sync with configuration.nix.
+  sudo "$(abs nixos-rebuild)" switch --flake "path:$PWD#$HOST" \
+    --option experimental-features "nix-command flakes" \
+    --option extra-substituters "https://cache.nixos-cuda.org" \
+    --option extra-trusted-public-keys "cache.nixos-cuda.org:74DUi4Ye579gUqzH4ziL9IyiJBlDpMRn9MBN8oNan9M="
 }
 
 step_yubikey_age() {
