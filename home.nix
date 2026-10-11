@@ -112,6 +112,20 @@ in
     };
   };
 
+  # Both services' upstream modules only set Install.WantedBy = "graphical-session.target",
+  # not an ordering After=/PartOf=. That's a race: elephant/walker can start before Hyprland
+  # (via uwsm) imports WAYLAND_DISPLAY/DISPLAY into the systemd --user manager, baking in a
+  # broken environment for their whole lifetime and breaking every app launched through them
+  # (apps inherit a launcher scope's env by fork, not the manager's live environment).
+  systemd.user.services.elephant.Unit = {
+    After = [ "graphical-session.target" ];
+    PartOf = [ "graphical-session.target" ];
+  };
+  systemd.user.services.walker.Unit = {
+    After = [ "graphical-session.target" ];
+    PartOf = [ "graphical-session.target" ];
+  };
+
   ############################################################
   # Shell: zsh + Spaceship prompt + zoxide as `cd`
   ############################################################
