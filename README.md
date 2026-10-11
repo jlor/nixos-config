@@ -32,14 +32,20 @@ and your 1Password login (email, Secret Key, password) at hand.
 1. **BIOS:** see "BIOS" at the end (EXPO, Resizable BAR, monitors on the 5090).
 2. **Install NixOS** from the 26.05 graphical ISO. If it hangs with the 5090, pick the
    `nomodeset` boot entry (the installer doesn't have the open Nvidia driver yet).
-   In the partitioning step:
-   - **Erase disk**, and tick **Encrypt system** with a strong passphrase. This can only
-     be chosen now; the YubiKey is added on top later, and the passphrase stays as fallback.
+   The installer's choices, step by step (this repo replaces the rest):
+   - **Location / Keyboard:** Europe/Copenhagen, Danish. Only used until the bootstrap.
+   - **Users:** create **`jlor`** (the config defines this user; any other name fails).
+   - **Desktop:** **No desktop**. Hyprland comes from this repo, and a desktop chosen here
+     would just be installed and thrown away. You get a text login to run the bootstrap.
+   - **Unfree software:** either; the config enables it anyway (Nvidia, Steam, 1Password).
+   - **Partitions:** **Erase disk**, and tick **Encrypt system** with a strong passphrase.
+     This can only be chosen now; the YubiKey is added on top later, and the passphrase
+     stays as fallback.
    - **Swap: "No swap"**. The config uses compressed RAM swap (zram), and an encrypted
      swap partition from the installer wouldn't carry over and would stall the boot.
 
-   Create the user **`jlor`**, and reboot into the new system.
-3. **Run the bootstrap**, as jlor, in a terminal:
+   Reboot into the new system and log in as jlor at the text prompt.
+3. **Run the bootstrap**, as jlor:
 
    ```sh
    nix --extra-experimental-features "nix-command flakes" run github:jlor/nixos-config#bootstrap
