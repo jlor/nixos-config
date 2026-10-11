@@ -296,17 +296,33 @@ step_yubikey_age() {
     return 0
   fi
   ask "Also let the YubiKey open the secrets (a hardware backup to your 1Password key)?" || return 0
+  # Optional step: any failure here is a warning, and leaves the repo as it was,
+  # so the bootstrap still reaches the commit step.
   local recipient
   recipient="$(age-plugin-yubikey --list 2>/dev/null | grep -m1 '^age1yubikey' || true)"
   if [ -z "$recipient" ]; then
     info "Creating an age key on the YubiKey (it'll ask for a PIN and touch policy):"
-    age-plugin-yubikey --generate >/dev/null
+    if ! age-plugin-yubikey --generate >/dev/null; then
+      warn "Skipped: the YubiKey couldn't create the key (see the message above)."
+      warn "Your 1Password key still opens the secrets. Re-run the bootstrap after fixing it."
+      return 0
+    fi
     recipient="$(age-plugin-yubikey --list 2>/dev/null | grep -m1 '^age1yubikey' || true)"
-    [ -n "$recipient" ] || die "age-plugin-yubikey didn't create a key."
+    if [ -z "$recipient" ]; then
+      warn "Skipped: age-plugin-yubikey didn't report a key."
+      return 0
+    fi
   fi
+  local sops_backup secrets_backup
+  sops_backup="$(mktemp)"; secrets_backup="$(mktemp)"
+  temp_files+=("$sops_backup" "$secrets_backup")
+  cp .sops.yaml "$sops_backup"; cp secrets/secrets.yaml "$secrets_backup"
   sed -i "s|^\(  - &desktop .*\)$|\1\n  - \&yubikey $recipient|; s|^\(          - \*desktop\)$|\1\n          - *yubikey|" .sops.yaml
-  grep -q '\*yubikey' .sops.yaml || die "Couldn't add the YubiKey to .sops.yaml."
-  sops updatekeys --yes secrets/secrets.yaml
+  if ! grep -q '\*yubikey' .sops.yaml || ! sops updatekeys --yes secrets/secrets.yaml; then
+    cp "$sops_backup" .sops.yaml; cp "$secrets_backup" secrets/secrets.yaml
+    warn "Skipped: couldn't add the YubiKey to the secrets; .sops.yaml and the secrets are unchanged."
+    return 0
+  fi
   grep -q '^AGE-PLUGIN-YUBIKEY-' "$USER_KEY" || age-plugin-yubikey --identity >> "$USER_KEY"
   git add .sops.yaml secrets/secrets.yaml
   info "Added: the secrets now open with your 1Password key or the YubiKey"
