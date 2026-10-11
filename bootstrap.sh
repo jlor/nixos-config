@@ -255,8 +255,30 @@ step_rebuild() {
   say "7/9 Building the system (the first time takes a while)"
   nix flake lock
   git add flake.lock
-  # Evaluates and builds as you; only the activation step runs through sudo.
-  nixos-rebuild switch --sudo --flake ".#$HOST"
+  # The prebuilt-CUDA cache (configuration.nix → nix.settings) only takes effect once
+  # this build is active, and Nix accepts extra caches only from root. So the build
+  # runs as root with the cache passed in; otherwise Ollama's CUDA code compiles from
+  # source for hours. "path:" because root can't read your git checkout as a git repo.
+  # Keep the cache URL and key in sync with configuration.nix.
+  local rc=0
+  sudo "$(abs nixos-rebuild)" switch --flake "path:$PWD#$HOST" \
+    --option experimental-features "nix-command flakes" \
+    --option extra-substituters "https://cache.nixos-cuda.org" \
+    --option extra-trusted-public-keys "cache.nixos-cuda.org:74DUi4Ye579gUqzH4ziL9IyiJBlDpMRn9MBN8oNan9M=" \
+    || rc=$?
+  [ "$rc" -eq 0 ] && return 0
+
+  # On the first switch from a console login, home-manager fails at its dconf step:
+  # your login session's D-Bus started before dconf existed. Harmless; it applies at
+  # the next boot. Anything else failing is a real error.
+  local other_failures
+  other_failures="$(systemctl --failed --no-legend --plain | awk '{print $1}' | grep -v "^home-manager-$EXPECTED_USER\.service$" || true)"
+  if systemctl is-failed --quiet "home-manager-$EXPECTED_USER.service" && [ -z "$other_failures" ]; then
+    warn "Your user settings (home-manager) couldn't apply in this console session."
+    warn "That's expected on a fresh install: they apply when you reboot."
+  else
+    die "The rebuild failed (exit $rc); see the errors above. Failed units: ${other_failures:-none}"
+  fi
 }
 
 step_yubikey_age() {
@@ -302,7 +324,10 @@ step_commit() {
     gh auth setup-git
     local msg="Bootstrap: reinstall on new hardware/disks"
     $first_time && msg="Bootstrap: hardware config, lock file, sops keys and secrets"
-    git commit -m "$msg"
+    # Name and email passed explicitly: on a fresh install your git config from
+    # home-manager may not be active until the reboot. The email comes from sops.
+    git -c user.name="$EXPECTED_USER" -c include.path=/run/secrets/rendered/git-identity \
+      commit -m "$msg"
     git push
   else
     info "Skipped. Commit and push later from $DIR."
