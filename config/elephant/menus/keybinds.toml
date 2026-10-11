@@ -1,0 +1,104 @@
+# Keybinds cheat sheet, opened with Super+K:
+#   walker -m menus:keybinds
+# Selecting an entry copies that shortcut to the clipboard.
+# Keep in sync with the keybindings section of config/hypr/hyprland.lua and
+# the "Hyprland keys" table in README.md.
+name = "keybinds"
+name_pretty = "Keybinds"
+icon = "input-keyboard"
+action = "%VALUE%"
+
+[[entries]]
+text = "Super + Return  —  Terminal"
+icon = "utilities-terminal"
+value = "wl-copy 'Super + Return'"
+
+[[entries]]
+text = "Super + Space  —  Launcher"
+icon = "system-search"
+value = "wl-copy 'Super + Space'"
+
+[[entries]]
+text = "Super + E  —  File manager"
+icon = "system-file-manager"
+value = "wl-copy 'Super + E'"
+
+[[entries]]
+text = "Super + Q  —  Close window"
+icon = "window-close"
+value = "wl-copy 'Super + Q'"
+
+[[entries]]
+text = "Super + F  —  Fullscreen"
+icon = "view-fullscreen"
+value = "wl-copy 'Super + F'"
+
+[[entries]]
+text = "Super + V  —  Toggle floating"
+icon = "preferences-system-windows"
+value = "wl-copy 'Super + V'"
+
+[[entries]]
+text = "Super + arrows  —  Move focus"
+icon = "input-keyboard"
+value = "wl-copy 'Super + arrows'"
+
+[[entries]]
+text = "Super + Shift + arrows  —  Move window"
+icon = "input-keyboard"
+value = "wl-copy 'Super + Shift + arrows'"
+
+[[entries]]
+text = "Super + 1-9  —  Switch workspace (1-5 left screen, 6-9 right)"
+icon = "input-keyboard"
+value = "wl-copy 'Super + 1-9'"
+
+[[entries]]
+text = "Super + Shift + 1-9  —  Move window to workspace"
+icon = "input-keyboard"
+value = "wl-copy 'Super + Shift + 1-9'"
+
+[[entries]]
+text = "Super + C  —  Clipboard history"
+icon = "edit-paste"
+value = "wl-copy 'Super + C'"
+
+[[entries]]
+text = "Super + Ctrl + E  —  Emoji & symbols"
+icon = "accessories-character-map"
+value = "wl-copy 'Super + Ctrl + E'"
+
+[[entries]]
+text = "Super + L  —  Lock"
+icon = "system-lock-screen"
+value = "wl-copy 'Super + L'"
+
+[[entries]]
+text = "Super + Escape  —  Power menu"
+icon = "system-shutdown"
+value = "wl-copy 'Super + Escape'"
+
+[[entries]]
+text = "Super + Shift + E  —  Log out immediately"
+icon = "system-log-out"
+value = "wl-copy 'Super + Shift + E'"
+
+[[entries]]
+text = "Print / Super + Shift + S  —  Screenshot region to clipboard"
+icon = "applets-screenshooter"
+value = "wl-copy 'Print / Super + Shift + S'"
+
+[[entries]]
+text = "Super + Print  —  Full screenshot to ~/Pictures"
+icon = "applets-screenshooter"
+value = "wl-copy 'Super + Print'"
+
+[[entries]]
+text = "Super + drag / Super + right-drag  —  Move / resize window"
+icon = "input-mouse"
+value = "wl-copy 'Super + drag / Super + right-drag'"
+
+[[entries]]
+text = "Super + K  —  This keybinds list"
+icon = "input-keyboard"
+value = "wl-copy 'Super + K'"
