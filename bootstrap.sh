@@ -1,6 +1,6 @@
 # Bootstrap this machine against the repo. Run on a freshly installed NixOS, as jlor:
 #
-#   nix --extra-experimental-features "nix-command flakes" run github:jlor/nixos-config#bootstrap
+#   nix --extra-experimental-features "nix-command flakes" run --no-write-lock-file github:jlor/nixos-config#bootstrap
 #
 # Works for the first install and for reinstalls, and is safe to re-run:
 #   1. clone the repo to ~/nixos-config (or update it)

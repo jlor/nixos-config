@@ -42,7 +42,7 @@
   in
   {
     # Set up a fresh install against this repo (see bootstrap.sh / README):
-    #   nix --extra-experimental-features "nix-command flakes" run github:jlor/nixos-config#bootstrap
+    #   nix --extra-experimental-features "nix-command flakes" run --no-write-lock-file github:jlor/nixos-config#bootstrap
     packages.x86_64-linux.bootstrap = bootstrap;
     apps.x86_64-linux.bootstrap = {
       type = "app";
