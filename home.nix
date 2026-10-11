@@ -4,7 +4,7 @@ let
   # Your SSH signing key's PUBLIC half from 1Password (starts with "ssh-ed25519 ").
   # Public keys are safe to commit (GitHub shows them at github.com/jlor.keys).
   # While null, commits aren't signed. See README → 1Password.
-  sshSigningKey = null;
+  sshSigningKey =  "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIH31O12i5Iv3UiNJ0qvIhIUXy0iINdZL5i0C9irajlX6 jlor@desktop";
 in
 
 # User-level config for jlor, managed by home-manager.
