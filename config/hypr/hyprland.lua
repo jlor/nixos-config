@@ -52,8 +52,15 @@ hl.on("hyprland.start", function()
     hl.exec_cmd("hypridle")
     hl.exec_cmd("systemctl --user start hyprpolkitagent")
     hl.exec_cmd("nm-applet --indicator")
-    -- 1Password in the tray: keeps the SSH agent and browser/CLI integration available
-    hl.exec_cmd("1password --silent")
+    -- 1Password in the tray: keeps the SSH agent and browser/CLI integration available.
+    -- Forced onto XWayland: 1Password's native-Wayland approval popups (e.g. "Access
+    -- Requested" for SSH signing) render too small to show their Allow/Deny buttons, a
+    -- known upstream regression (1password.community/discussions/developers/
+    -- 1password-fails-to-prompt-for-approval-when-using-hyprland/147361). XWayland
+    -- windows size correctly like any X11 app. The NixOS-wrapped binary hardcodes
+    -- --ozone-platform-hint=auto (ignoring $ELECTRON_OZONE_PLATFORM_HINT) whenever
+    -- NIXOS_OZONE_WL is set, so override it with an explicit CLI flag, not an env var.
+    hl.exec_cmd("1password --ozone-platform=x11 --silent")
     -- Mark the left screen primary for X11 games (Battle.net, Wine).
     hl.exec_cmd("xrandr --output DP-1 --primary")
 end)
@@ -191,15 +198,6 @@ hl.window_rule({
     float  = true,
     center = true,
     size   = { 960, 640 },
-})
-
--- 1Password's approval popups (e.g. "Access Requested" for SSH signing) share the main
--- app's window class/title, and can render too short to show their Allow/Deny buttons.
--- A floor, not a fixed size, so resizing the main app window freely still works.
-hl.window_rule({
-    name     = "1password-min-size",
-    match    = { class = "^(1password)$" },
-    min_size = { 450, 550 },
 })
 
 -- Frosted glass behind the bar, launcher (Walker) and notifications.
