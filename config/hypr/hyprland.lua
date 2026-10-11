@@ -184,6 +184,15 @@ hl.window_rule({
     size   = { 960, 640 },
 })
 
+-- 1Password's approval popups (e.g. "Access Requested" for SSH signing) share the main
+-- app's window class/title, and can render too short to show their Allow/Deny buttons.
+-- A floor, not a fixed size, so resizing the main app window freely still works.
+hl.window_rule({
+    name     = "1password-min-size",
+    match    = { class = "^(1password)$" },
+    min_size = { 450, 550 },
+})
+
 -- Frosted glass behind the bar, launcher (Walker) and notifications.
 hl.layer_rule({ match = { namespace = "waybar" },        blur = true, ignore_alpha = 0.1 })
 hl.layer_rule({ match = { namespace = "walker" },        blur = true, ignore_alpha = 0.1 })
@@ -198,9 +207,9 @@ hl.bind(mainMod .. " + E",      hl.dsp.exec_cmd(fileManager))
 hl.bind(mainMod .. " + Q",      hl.dsp.window.close())
 hl.bind(mainMod .. " + F",      hl.dsp.window.fullscreen({ action = "toggle" }))
 hl.bind(mainMod .. " + V",      hl.dsp.window.float({ action = "toggle" }))
-hl.bind(mainMod .. " + J",      hl.dsp.layout("togglesplit"))
 hl.bind(mainMod .. " + L",      hl.dsp.exec_cmd("loginctl lock-session"))
 hl.bind(mainMod .. " + Escape", hl.dsp.exec_cmd("walker -m menus:power"))   -- power menu
+hl.bind(mainMod .. " + K",      hl.dsp.exec_cmd("walker -m menus:keybinds")) -- keybinds cheat sheet
 hl.bind(mainMod .. " + SHIFT + E", hl.dsp.exit())
 
 -- Walker modes: clipboard history and emoji/symbols
@@ -208,11 +217,13 @@ hl.bind(mainMod .. " + C",         hl.dsp.exec_cmd("walker -m clipboard"))
 hl.bind(mainMod .. " + CTRL + E",  hl.dsp.exec_cmd("walker -m symbols"))
 
 -- Screenshots: region -> clipboard, full screen -> ~/Pictures
+-- Super+Shift+S for the region shot too, matching Windows/WSL muscle memory.
 hl.bind("Print", hl.dsp.exec_cmd('grim -g "$(slurp)" - | wl-copy && notify-send "Screenshot copied"'))
+hl.bind(mainMod .. " + SHIFT + S", hl.dsp.exec_cmd('grim -g "$(slurp)" - | wl-copy && notify-send "Screenshot copied"'))
 hl.bind(mainMod .. " + Print", hl.dsp.exec_cmd('mkdir -p ~/Pictures && grim ~/Pictures/screenshot-$(date +%F-%H%M%S).png && notify-send "Screenshot saved"'))
 
--- Focus: arrows or H/K (J is togglesplit, L is lock)
-for key, dir in pairs({ left = "left", right = "right", up = "up", down = "down", H = "left", K = "up" }) do
+-- Focus: arrows
+for key, dir in pairs({ left = "left", right = "right", up = "up", down = "down" }) do
     hl.bind(mainMod .. " + " .. key, hl.dsp.focus({ direction = dir }))
 end
 
@@ -226,10 +237,6 @@ for i = 1, 9 do
     hl.bind(mainMod .. " + " .. i,         hl.dsp.focus({ workspace = i }))
     hl.bind(mainMod .. " + SHIFT + " .. i, hl.dsp.window.move({ workspace = i }))
 end
-
--- Scratchpad
-hl.bind(mainMod .. " + S",         hl.dsp.workspace.toggle_special("magic"))
-hl.bind(mainMod .. " + SHIFT + S", hl.dsp.window.move({ workspace = "special:magic" }))
 
 -- Mouse: SUPER + drag to move / right-drag to resize
 hl.bind(mainMod .. " + mouse:272", hl.dsp.window.drag(),   { mouse = true })

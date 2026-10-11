@@ -211,18 +211,17 @@ native parts).
 | Super + Q | Close window |
 | Super + F | Fullscreen |
 | Super + V | Toggle floating |
-| Super + J | Toggle split direction |
-| Super + arrows / H / K | Move focus |
+| Super + arrows | Move focus |
 | Super + Shift + arrows | Move window |
 | Super + 1–9 | Switch workspace (1–5 left screen, 6–9 right) |
 | Super + Shift + 1–9 | Move window to workspace |
-| Super + S | Scratchpad (Shift: send window there) |
 | Super + C | Clipboard history |
 | Super + Ctrl + E | Emoji & symbols |
 | Super + L | Lock |
+| Super + K | Show this keybind list |
 | Super + Escape | Power menu (lock, log out, reboot, shut down) |
 | Super + Shift + E | Log out immediately |
-| Print | Screenshot region to clipboard |
+| Print / Super + Shift + S | Screenshot region to clipboard |
 | Super + Print | Full screenshot to ~/Pictures |
 
 ## Day-to-day
