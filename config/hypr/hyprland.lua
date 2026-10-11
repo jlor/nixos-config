@@ -19,7 +19,7 @@ local mainMod     = "SUPER"
 -- Left: primary, landscape, highest refresh rate.
 hl.monitor({ output = "DP-1", mode = "highrr", position = "0x0", scale = 1 })
 -- Right: portrait. transform 1 = 90°; use 3 if it comes out upside down.
-hl.monitor({ output = "HDMI-A-1", mode = "preferred", position = "auto-right", scale = 1, transform = 1 })
+hl.monitor({ output = "HDMI-A-1", mode = "preferred", position = "auto-right", scale = 1, transform = 3 })
 -- Anything else you plug in.
 hl.monitor({ output = "", mode = "preferred", position = "auto", scale = 1 })
 
