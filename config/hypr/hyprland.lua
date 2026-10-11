@@ -27,8 +27,17 @@ hl.monitor({ output = "", mode = "preferred", position = "auto", scale = 1 })
 for i = 1, 5 do
     hl.workspace_rule({ workspace = tostring(i), monitor = "DP-1", default = (i == 1) })
 end
+-- Portrait monitor: master layout, centred, so 3 windows land 25/50/25 instead of
+-- dwindle's binary splits. A 4th/5th window stacks within a side column (50/50
+-- vertically), giving the 3x2 arrangement without any extra config.
 for i = 6, 9 do
-    hl.workspace_rule({ workspace = tostring(i), monitor = "HDMI-A-1", default = (i == 6) })
+    hl.workspace_rule({
+        workspace   = tostring(i),
+        monitor     = "HDMI-A-1",
+        default     = (i == 6),
+        layout      = "master",
+        layout_opts = { orientation = "center", mfact = 0.5 },
+    })
 end
 
 -----------------
