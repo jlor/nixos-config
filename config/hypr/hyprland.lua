@@ -13,11 +13,13 @@ local mainMod     = "SUPER"
 ----------------
 --- MONITORS ---
 ----------------
--- `hyprctl monitors` shows the real port names; replace DP-1 / DP-2 if they differ.
+-- Ports from `hyprctl monitors`: DP-1 = Samsung C32JG5x (primary, left),
+-- HDMI-A-1 = Lenovo T27h-2L (portrait, right). The login screen (configuration.nix)
+-- and Waybar (config/waybar/config.jsonc) use the same names.
 -- Left: primary, landscape, highest refresh rate.
 hl.monitor({ output = "DP-1", mode = "highrr", position = "0x0", scale = 1 })
 -- Right: portrait. transform 1 = 90°; use 3 if it comes out upside down.
-hl.monitor({ output = "DP-2", mode = "preferred", position = "auto-right", scale = 1, transform = 1 })
+hl.monitor({ output = "HDMI-A-1", mode = "preferred", position = "auto-right", scale = 1, transform = 1 })
 -- Anything else you plug in.
 hl.monitor({ output = "", mode = "preferred", position = "auto", scale = 1 })
 
@@ -26,16 +28,16 @@ for i = 1, 5 do
     hl.workspace_rule({ workspace = tostring(i), monitor = "DP-1", default = (i == 1) })
 end
 for i = 6, 9 do
-    hl.workspace_rule({ workspace = tostring(i), monitor = "DP-2", default = (i == 6) })
+    hl.workspace_rule({ workspace = tostring(i), monitor = "HDMI-A-1", default = (i == 6) })
 end
 
 -----------------
 --- AUTOSTART ---
 -----------------
 hl.on("hyprland.start", function()
-    -- First image applies to every screen, the -o DP-2 one overrides the portrait screen.
+    -- First image applies to every screen, the -o HDMI-A-1 one overrides the portrait screen.
     hl.exec_cmd("swaybg -m fill -i " .. wallpapers .. "wallpaper-landscape.jpg"
-        .. " -o DP-2 -m fill -i " .. wallpapers .. "wallpaper-portrait.jpg")
+        .. " -o HDMI-A-1 -m fill -i " .. wallpapers .. "wallpaper-portrait.jpg")
     hl.exec_cmd("waybar")
     hl.exec_cmd("mako")
     hl.exec_cmd("hypridle")
