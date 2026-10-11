@@ -3,8 +3,8 @@
 #   jlor:    your personal key, to create and edit secrets
 #   desktop: the desktop's own key, so it can decrypt at boot
 keys:
-  - &jlor age1REPLACE_WITH_YOUR_PERSONAL_PUBLIC_KEY
-  - &desktop age1REPLACE_WITH_THE_DESKTOP_PUBLIC_KEY
+  - &jlor age13amcn45a3hjm7vjnu2jllzze4xfmhmlq0kfgtdt43je69nj4wf8qtv4dp6
+  - &desktop age168fnrgy36cydf9mnen3kqrlauam04ng3dt9h5rr32wpt3ltdvqusklkpdv
 
 creation_rules:
   - path_regex: secrets/[^/]+\.(yaml|json|env|ini)$
