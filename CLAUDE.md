@@ -1,7 +1,8 @@
 # CLAUDE.md
 
 NixOS flake for jlor's desktop (hostname `desktop`): Ryzen 7 9800X3D, RTX 5090,
-two monitors (DP-1 landscape primary left, DP-2 portrait right). README.md is the
+two monitors (DP-1 Samsung landscape primary left, HDMI-A-1 Lenovo portrait right;
+port names used in hyprland.lua, waybar and the login screen). README.md is the
 user-facing guide; this file is for working on the repo.
 
 ## Guiding principle: reproducibility

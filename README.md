@@ -48,7 +48,7 @@ and your 1Password login (email, Secret Key, password) at hand.
 3. **Run the bootstrap**, as jlor:
 
    ```sh
-   nix --extra-experimental-features "nix-command flakes" run --no-write-lock-file github:jlor/nixos-config#bootstrap
+   nix --extra-experimental-features "nix-command flakes" run --refresh --no-write-lock-file github:jlor/nixos-config#bootstrap
    ```
 
    It clones the repo to `~/nixos-config`, adds this machine's hardware config, and sets

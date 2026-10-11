@@ -1,4 +1,4 @@
-{ config, pkgs, ... }:
+{ config, lib, pkgs, ... }:
 
 let
   username = "jlor";
@@ -73,6 +73,18 @@ in
   };
 
   # Graphical login screen (ReGreet on greetd), themed to match
+  # The login screen's compositor (cage) knows nothing about the monitor layout: it
+  # spans both screens and centres the login box across the join. Switch the
+  # portrait screen (HDMI-A-1) off while logging in, so the box sits on the main one.
+  services.greetd.settings.default_session.command =
+    let
+      regreetOnMainScreen = pkgs.writeShellScript "regreet-main-screen" ''
+        ${pkgs.wlr-randr}/bin/wlr-randr --output HDMI-A-1 --off || true
+        exec ${lib.getExe config.programs.regreet.package}
+      '';
+    in
+    "${pkgs.dbus}/bin/dbus-run-session ${lib.getExe pkgs.cage} -s -- ${regreetOnMainScreen}";
+
   programs.regreet = {
     enable = true;
     settings = {
