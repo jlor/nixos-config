@@ -63,3 +63,96 @@ jobs:
       - uses: cachix/install-nix-action@v31
       - name: Evaluate ${{ matrix.template }} dev shell
         run: nix eval --raw "path:./templates/${{ matrix.template }}#devShells.x86_64-linux.default.drvPath"
+
+  # A lock file bump says nothing about what it actually moves. This evaluates
+  # the package versions on both sides and comments the difference, so a kernel
+  # or Nvidia bump is visible before merging deploys it.
+  what-changed:
+    name: What changed
+    runs-on: ubuntu-latest
+    # Only for pull requests from this repo: a fork gets a read-only token, so
+    # it could evaluate but never post the comment.
+    if: >-
+      github.event_name == 'pull_request' &&
+      github.event.pull_request.head.repo.full_name == github.repository
+    permissions:
+      contents: read
+      pull-requests: write
+      issues: write # labels are an issues API resource
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0 # both sides of the diff must be present
+
+      - name: Does this PR touch flake.lock?
+        id: lock
+        env:
+          BASE: ${{ github.event.pull_request.base.sha }}
+        run: |
+          if git diff --quiet "$BASE" HEAD -- flake.lock; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::flake.lock unchanged, nothing to compare"
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - uses: cachix/install-nix-action@v31
+        if: steps.lock.outputs.changed == 'true'
+
+      - name: Check out the base commit
+        if: steps.lock.outputs.changed == 'true'
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.pull_request.base.sha }}
+          path: base
+
+      # Same stand-in as the evaluate job, for both checkouts.
+      - name: Stand-in hardware config (CI only)
+        if: steps.lock.outputs.changed == 'true'
+        run: |
+          for dir in . base; do
+            if [ ! -f "$dir/hardware-configuration.nix" ]; then
+              cp ci/hardware-configuration.nix "$dir/hardware-configuration.nix"
+              git -C "$dir" add hardware-configuration.nix
+            fi
+          done
+
+      - name: Evaluate both sides
+        id: report
+        if: steps.lock.outputs.changed == 'true'
+        run: |
+          ci/what-changed.sh "$PWD/base" "$PWD" > report.md
+          cat report.md >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Comment on the pull request
+        if: steps.lock.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR: ${{ github.event.pull_request.number }}
+        run: |
+          # Update the existing comment instead of adding one per push.
+          id=$(gh api "repos/$GITHUB_REPOSITORY/issues/$PR/comments" \
+            --jq 'map(select(.body | startswith("<!-- what-changed -->"))) | first | .id // empty')
+          if [ -n "$id" ]; then
+            gh api --method PATCH "repos/$GITHUB_REPOSITORY/issues/comments/$id" -F body=@report.md > /dev/null
+          else
+            gh api --method POST "repos/$GITHUB_REPOSITORY/issues/$PR/comments" -F body=@report.md > /dev/null
+          fi
+
+      - name: Label the risky ones
+        if: steps.lock.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR: ${{ github.event.pull_request.number }}
+          REBOOT: ${{ steps.report.outputs.reboot }}
+        run: |
+          # --force keeps the label defined here in git rather than clicked into
+          # the GitHub UI, and recreates it if it is ever deleted.
+          gh label create needs-reboot --color f38ba8 \
+            --description "Kernel or Nvidia driver moves; needs a reboot" --force
+          if [ "$REBOOT" = "true" ]; then
+            gh pr edit "$PR" --add-label needs-reboot
+          else
+            # Not an error if an earlier push labelled it and this one doesn't.
+            gh pr edit "$PR" --remove-label needs-reboot || true
+          fi
