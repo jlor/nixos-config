@@ -285,6 +285,12 @@ branch names in `flake.nix` and read the release notes first.
 Requires the Renovate GitHub App: install it from
 [github.com/apps/renovate](https://github.com/apps/renovate) for `nixos-config`.
 
+Mend (who host the app) default an account to **Silent**, which scans the repo but never
+opens PRs, branches or the dashboard — it looks exactly like Renovate not running at all.
+`"mode": "full"` in `renovate.json` overrides that from the repo, so the setting lives in
+git rather than in the Mend portal. Job logs are at
+[developer.mend.io](https://developer.mend.io) if a run needs checking.
+
 ## Secrets (sops + age)
 
 Secrets are stored encrypted in `secrets/secrets.yaml`, so they can live in this public
