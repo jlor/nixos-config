@@ -270,6 +270,19 @@ gh pr merge --squash       # once it's green; comin deploys within a minute
 As repo admin you can still push straight to `main` in an emergency (the rule isn't
 enforced for admins), but then nothing checks the commit first.
 
+### What a lock file PR actually changes
+
+"flake.lock updated" says nothing about what moves, so any PR touching `flake.lock`
+gets a **What changed** comment: the kernel, Nvidia and Hyprland versions before and
+after, plus every package whose version differs. A PR that moves the kernel or the
+Nvidia driver is labelled **needs-reboot**, since those can also interrupt a running
+game when comin deploys them.
+
+It reads versions at evaluation time ([`ci/package-versions.nix`](ci/package-versions.nix)),
+so like the rest of CI it never builds. The limit of that: a package rebuilt without a
+version change (a patch, a changed dependency) doesn't show up. Use `nvd diff` on the
+machine itself for a true closure comparison.
+
 ## Updates (Renovate)
 
 [`renovate.json`](renovate.json) opens update pull requests every Monday morning:
