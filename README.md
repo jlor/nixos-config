@@ -221,14 +221,17 @@ native parts).
 | Super + K | Show this keybind list |
 | Super + Escape | Power menu (lock, log out, reboot, shut down) |
 | Super + Shift + E | Log out immediately |
-| Print / Super + Shift + S | Screenshot a region |
+| Print / Super + Shift + S | Screenshot a region (clipboard only) |
 | Super + Print | Screenshot a window (point and click) |
 | Super + Shift + Print | Screenshot a monitor (click the one you want) |
 | Super + Ctrl + S | Screenshot a region and annotate it |
 
-Screenshots come from [hyprshot](https://github.com/Gustash/Hyprshot): every shot lands
-on the clipboard *and* in `~/Pictures`. The screen freezes while you select, so menus
-and tooltips stay open long enough to capture. Annotation (arrows, boxes, blur) is
+Screenshots come from [hyprshot](https://github.com/Gustash/Hyprshot). A region shot
+goes to the clipboard and nowhere else — it's the throwaway one you paste straight into
+a chat, and keeping every one of those just fills `~/Pictures` with files you can't tell
+apart. Window and monitor shots are the deliberate ones, so they land on the clipboard
+*and* in `~/Pictures`. The screen freezes while you select, so menus and tooltips stay
+open long enough to capture. Annotation (arrows, boxes, blur) is
 [satty](https://github.com/gabm/Satty), themed to match in `config/satty/config.toml`:
 Enter copies and closes, Escape discards.
 

@@ -84,7 +84,7 @@ icon = "system-log-out"
 value = "wl-copy 'Super + Shift + E'"
 
 [[entries]]
-text = "Print / Super + Shift + S  —  Screenshot a region"
+text = "Print / Super + Shift + S  —  Screenshot a region (clipboard only)"
 icon = "applets-screenshooter"
 value = "wl-copy 'Print / Super + Shift + S'"
 
