@@ -1,0 +1,4 @@
+# Build artifacts from `nix build`: symlinks into /nix/store, meaningless
+# anywhere but the machine that built them.
+/result
+/result-*
