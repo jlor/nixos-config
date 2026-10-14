@@ -288,6 +288,22 @@ in
   programs.fd.enable = true;
   programs.jq.enable = true;
 
+  # Video player. gpu-next + Vulkan is the native Wayland path (no XWayland);
+  # hwdec picks up nvidia-vaapi-driver from configuration.nix.
+  # URLs work out of the box: pkgs.mpv is built with youtubeSupport, which puts
+  # yt-dlp on mpv's fallback PATH.
+  programs.mpv = {
+    enable = true;
+    config = {
+      vo = "gpu-next";
+      gpu-api = "vulkan";
+      hwdec = "auto-safe";
+      keep-open = "yes";
+      save-position-on-quit = true;
+      ytdl-format = "bestvideo[height<=?1440]+bestaudio/best";
+    };
+  };
+
   home.packages = with pkgs; [
     eza
     bat
