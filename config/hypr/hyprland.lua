@@ -215,8 +215,12 @@ hl.bind(mainMod .. " + C",         hl.dsp.exec_cmd("walker -m clipboard"))
 hl.bind(mainMod .. " + CTRL + E",  hl.dsp.exec_cmd("walker -m symbols"))
 
 -- Screenshots (hyprshot): drag a region, point at a window, or pick a monitor.
--- Each one copies to the clipboard and saves to ~/Pictures.
 -- Super+Shift+S for the region shot too, matching Windows/WSL muscle memory.
+--
+-- Region goes to the clipboard only. It's the one used constantly for pasting
+-- into a chat, and saving every one of those just fills ~/Pictures with files
+-- you can't tell apart. Window and monitor shots are the deliberate ones, so
+-- they're kept.
 --
 -- -o is passed explicitly: left to itself hyprshot falls back to $HOME, not
 -- ~/Pictures, when XDG_PICTURES_DIR is unset (it is here). It mkdir -p's the
@@ -224,8 +228,8 @@ hl.bind(mainMod .. " + CTRL + E",  hl.dsp.exec_cmd("walker -m symbols"))
 -- -z freezes the screen while selecting, so menus and tooltips stay put.
 local shotDir = '-o "$HOME/Pictures"'
 
-hl.bind("Print",                     hl.dsp.exec_cmd('hyprshot -z -m region ' .. shotDir))
-hl.bind(mainMod .. " + SHIFT + S",   hl.dsp.exec_cmd('hyprshot -z -m region ' .. shotDir))
+hl.bind("Print",                     hl.dsp.exec_cmd('hyprshot -z -m region --clipboard-only'))
+hl.bind(mainMod .. " + SHIFT + S",   hl.dsp.exec_cmd('hyprshot -z -m region --clipboard-only'))
 hl.bind(mainMod .. " + Print",       hl.dsp.exec_cmd('hyprshot -z -m window ' .. shotDir))
 hl.bind(mainMod .. " + SHIFT + Print", hl.dsp.exec_cmd('hyprshot -m output ' .. shotDir))
 
