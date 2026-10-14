@@ -214,11 +214,26 @@ hl.bind(mainMod .. " + SHIFT + E", hl.dsp.exit())
 hl.bind(mainMod .. " + C",         hl.dsp.exec_cmd("walker -m clipboard"))
 hl.bind(mainMod .. " + CTRL + E",  hl.dsp.exec_cmd("walker -m symbols"))
 
--- Screenshots: region -> clipboard, full screen -> ~/Pictures
+-- Screenshots (hyprshot): drag a region, point at a window, or pick a monitor.
+-- Each one copies to the clipboard and saves to ~/Pictures.
 -- Super+Shift+S for the region shot too, matching Windows/WSL muscle memory.
-hl.bind("Print", hl.dsp.exec_cmd('grim -g "$(slurp)" - | wl-copy && notify-send "Screenshot copied"'))
-hl.bind(mainMod .. " + SHIFT + S", hl.dsp.exec_cmd('grim -g "$(slurp)" - | wl-copy && notify-send "Screenshot copied"'))
-hl.bind(mainMod .. " + Print", hl.dsp.exec_cmd('mkdir -p ~/Pictures && grim ~/Pictures/screenshot-$(date +%F-%H%M%S).png && notify-send "Screenshot saved"'))
+--
+-- -o is passed explicitly: left to itself hyprshot falls back to $HOME, not
+-- ~/Pictures, when XDG_PICTURES_DIR is unset (it is here). It mkdir -p's the
+-- directory itself, so there's nothing to create first.
+-- -z freezes the screen while selecting, so menus and tooltips stay put.
+local shotDir = '-o "$HOME/Pictures"'
+
+hl.bind("Print",                     hl.dsp.exec_cmd('hyprshot -z -m region ' .. shotDir))
+hl.bind(mainMod .. " + SHIFT + S",   hl.dsp.exec_cmd('hyprshot -z -m region ' .. shotDir))
+hl.bind(mainMod .. " + Print",       hl.dsp.exec_cmd('hyprshot -z -m window ' .. shotDir))
+hl.bind(mainMod .. " + SHIFT + Print", hl.dsp.exec_cmd('hyprshot -m output ' .. shotDir))
+
+-- Annotate before sharing: grab a region, open it in satty (arrows, boxes, blur).
+-- --raw pipes the image straight through, so nothing hits the disk until you save.
+hl.bind(mainMod .. " + CTRL + S", hl.dsp.exec_cmd(
+  'hyprshot -z -m region --raw | satty --filename - ' ..
+  '--output-filename "$HOME/Pictures/annotated-$(date +%F-%H%M%S).png"'))
 
 -- Focus: arrows
 for key, dir in pairs({ left = "left", right = "right", up = "up", down = "down" }) do

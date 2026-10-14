@@ -27,6 +27,7 @@ in
     "spaceship.zsh".source = ./config/zsh/spaceship.zsh;
     "elephant/menus".source = ./config/elephant/menus;
     "elephant/1password.toml".source = ./config/elephant/1password.toml;
+    "satty/config.toml".source = ./config/satty/config.toml;
   };
 
   # Wallpapers at a stable path, used by hyprland.lua
