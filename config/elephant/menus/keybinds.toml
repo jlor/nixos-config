@@ -84,14 +84,24 @@ icon = "system-log-out"
 value = "wl-copy 'Super + Shift + E'"
 
 [[entries]]
-text = "Print / Super + Shift + S  —  Screenshot region to clipboard"
+text = "Print / Super + Shift + S  —  Screenshot a region"
 icon = "applets-screenshooter"
 value = "wl-copy 'Print / Super + Shift + S'"
 
 [[entries]]
-text = "Super + Print  —  Full screenshot to ~/Pictures"
+text = "Super + Print  —  Screenshot a window (point and click)"
 icon = "applets-screenshooter"
 value = "wl-copy 'Super + Print'"
+
+[[entries]]
+text = "Super + Shift + Print  —  Screenshot a monitor (click the one you want)"
+icon = "applets-screenshooter"
+value = "wl-copy 'Super + Shift + Print'"
+
+[[entries]]
+text = "Super + Ctrl + S  —  Screenshot a region and annotate it"
+icon = "applets-screenshooter"
+value = "wl-copy 'Super + Ctrl + S'"
 
 [[entries]]
 text = "Super + drag / Super + right-drag  —  Move / resize window"

@@ -265,6 +265,8 @@ in
     hypridle              # idle -> lock
     hyprpolkitagent       # password prompts for GUI apps
     grim slurp wl-clipboard   # screenshots + clipboard (Walker keeps the history)
+    hyprshot               # screenshot by region / window / monitor; drives grim+slurp
+    satty                  # annotate a screenshot before sharing it
     libnotify             # notify-send, used by the screenshot keys
     brightnessctl playerctl
     pavucontrol           # audio settings

@@ -1,0 +1,40 @@
+# satty: the annotation editor opened by Super + Ctrl + S (see hyprland.lua).
+#
+# Keys here are the ones satty 0.20.1 accepts — the upstream README documents
+# 0.21.0 and later syntax (list-valued early-exit, auto-copy) that this version
+# rejects, so don't copy from it without checking `satty --help` first.
+[general]
+# Wayland clipboard, same tool the rest of the config uses.
+copy-command = "wl-copy"
+
+# Enter copies the annotated image and closes; Escape throws it away.
+actions-on-enter = ["save-to-clipboard", "exit"]
+actions-on-escape = ["exit"]
+
+# The screenshot is piped in on stdin, so saving is opt-in: the keybind passes
+# --output-filename for the "save" action.
+initial-tool = "brush"
+annotation-size-factor = 2
+corner-roundness = 12
+primary-highlighter = "block"
+
+# Catppuccin Mocha, mauve first to match the accent used everywhere else.
+# RRGGBBAA — the trailing ff is full opacity.
+[color-palette]
+palette = [
+  "#cba6f7ff", # mauve (accent)
+  "#f38ba8ff", # red
+  "#fab387ff", # peach
+  "#a6e3a1ff", # green
+  "#89b4faff", # blue
+  "#cdd6f4ff", # text
+]
+
+# Offered as presets in the full colour picker.
+custom = [
+  "#f5c2e7", # pink
+  "#f9e2af", # yellow
+  "#94e2d5", # teal
+  "#b4befe", # lavender
+  "#1e1e2e", # base (dark)
+]

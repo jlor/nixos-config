@@ -221,8 +221,16 @@ native parts).
 | Super + K | Show this keybind list |
 | Super + Escape | Power menu (lock, log out, reboot, shut down) |
 | Super + Shift + E | Log out immediately |
-| Print / Super + Shift + S | Screenshot region to clipboard |
-| Super + Print | Full screenshot to ~/Pictures |
+| Print / Super + Shift + S | Screenshot a region |
+| Super + Print | Screenshot a window (point and click) |
+| Super + Shift + Print | Screenshot a monitor (click the one you want) |
+| Super + Ctrl + S | Screenshot a region and annotate it |
+
+Screenshots come from [hyprshot](https://github.com/Gustash/Hyprshot): every shot lands
+on the clipboard *and* in `~/Pictures`. The screen freezes while you select, so menus
+and tooltips stay open long enough to capture. Annotation (arrows, boxes, blur) is
+[satty](https://github.com/gabm/Satty), themed to match in `config/satty/config.toml`:
+Enter copies and closes, Escape discards.
 
 ## Day-to-day
 
