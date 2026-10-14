@@ -94,7 +94,12 @@ step_repo() {
     git clone "$REPO_URL" "$DIR"
   fi
   cd "$DIR"
-  grep -q "REPLACE_WITH" .sops.yaml && first_time=true
+  # Decide "first install vs reinstall" from the committed .sops.yaml, not the
+  # working tree. An earlier run fills the real keys in without committing them,
+  # so reading the working tree makes every re-run before the first push look
+  # like a reinstall. If git can't read it, stay with reinstall: that path never
+  # overwrites the keys in .sops.yaml.
+  git show HEAD:.sops.yaml 2>/dev/null | grep -q "REPLACE_WITH" && first_time=true
   return 0
 }
 
@@ -135,14 +140,21 @@ step_user_key() {
     return 0
   fi
   if $first_time; then
-    key="$(age-keygen 2>/dev/null | grep '^AGE-SECRET-KEY-1')"
-    generated_user_key=true
-    info "Generated a new key"
-    if op_ready && op_store_key "$key"; then
-      info "Stored in 1Password as \"$OP_ITEM\""
-      generated_user_key=false   # safely backed up; no need to show it at the end
+    # A re-run before the first commit is still the same first install, so an
+    # earlier run may already have generated the key and stored it. Reuse that
+    # one: a second key would orphan the secrets encrypted to the first.
+    if op_ready && key="$(op_fetch_key 2>/dev/null)" && [[ $key == AGE-SECRET-KEY-1* ]]; then
+      info "Fetched the key an earlier run stored in 1Password (\"$OP_ITEM\")"
     else
-      warn "Couldn't store it in 1Password; it'll be shown at the end to back up by hand."
+      key="$(age-keygen 2>/dev/null | grep '^AGE-SECRET-KEY-1')"
+      generated_user_key=true
+      info "Generated a new key"
+      if op_ready && op_store_key "$key"; then
+        info "Stored in 1Password as \"$OP_ITEM\""
+        generated_user_key=false   # safely backed up; no need to show it at the end
+      else
+        warn "Couldn't store it in 1Password; it'll be shown at the end to back up by hand."
+      fi
     fi
   else
     if op_ready && key="$(op_fetch_key 2>/dev/null)" && [[ $key == AGE-SECRET-KEY-1* ]]; then
