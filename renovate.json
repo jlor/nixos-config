@@ -9,6 +9,11 @@
   "nix": {
     "enabled": true
   },
+  "lockFileMaintenance": {
+    "description": "The nix manager only refreshes flake.lock through lock file maintenance, and it is off by default. Without this, no flake input ever updates.",
+    "enabled": true,
+    "schedule": ["before 6am on monday"]
+  },
   "ignorePaths": ["templates/**"],
   "packageRules": [
     {
