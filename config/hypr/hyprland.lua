@@ -126,6 +126,15 @@ hl.config({
         accel_profile = "flat",        -- raw mouse input for games
         sensitivity   = 0,
     },
+
+    -- WIP (see docs/hdt-overlay.md): Hearthstone Deck Tracker's transparent overlay is
+    -- only repainted in damaged regions, so with damage tracking on, just the area under
+    -- the cursor draws and the rest of the overlay vanishes. 0 = redraw everything, every
+    -- frame. This is a GLOBAL setting with a real power/perf cost on an always-on desktop,
+    -- which is why this branch isn't merged yet.
+    debug = {
+        damage_tracking = 0,
+    },
 })
 
 -- Animation curves (Hyprland defaults: smooth, springy windows)
@@ -189,6 +198,26 @@ hl.window_rule({
     float  = true,
     center = true,
     size   = { 960, 640 },
+})
+
+-- Hearthstone Deck Tracker's transparent overlay sits on top of the whole game window.
+-- Without this, Hyprland blurs/dims everything behind it (i.e. the game) and the
+-- inactive-opacity rule fades it, since the overlay is a genuinely transparent window.
+-- Transparency itself comes from Proton's WINE_LAYERED_OVERLAY_{ALPHA,SHAPE} flags,
+-- set on the Lutris game config.
+hl.window_rule({
+    name      = "hdt-overlay",
+    match     = { title = "^HearthstoneOverlay$" },
+    no_blur   = true,
+    no_shadow = true,
+    no_dim    = true,
+    opacity   = 1.0,
+    -- Pin to the top-left: it must sit exactly over the fullscreen game. Without this
+    -- an accidental SUPER+drag moves it and it doesn't snap back on restart.
+    move      = { 0, 0 },
+    -- Hovering the overlay must not steal focus from the game: the focus change makes
+    -- Wine repaint the layered window opaque. Clicks still reach it.
+    no_follow_mouse = true,
 })
 
 -- Frosted glass behind the bar, launcher (Walker) and notifications.
