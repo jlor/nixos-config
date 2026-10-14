@@ -2,6 +2,7 @@
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": ["config:recommended"],
   "description": "Weekly update PRs for flake inputs and GitHub Actions. CI evaluates each PR; merging it lets comin deploy.",
+  "mode": "full",
   "timezone": "Europe/Copenhagen",
   "schedule": ["before 6am on monday"],
   "labels": ["dependencies"],
