@@ -250,7 +250,12 @@ in
 
     # Communication
     discord
-    karere          # WhatsApp desktop client (replaces the removed wasistlos)
+    # WhatsApp desktop client. Replaces karere (which replaced wasistlos):
+    # karere's WebKitGTK backend aborted its whole web process on any <audio>
+    # element because nixpkgs ships it without GStreamer plugins, so every
+    # notification sound was a crash loop. zapzap is QtWebEngine, which bundles
+    # its own audio stack and can't hit that class of bug.
+    zapzap
 
     # Hyprland essentials
     kitty                 # terminal
