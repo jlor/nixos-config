@@ -132,6 +132,11 @@ in
   ############################################################
   programs.zsh = {
     enable = true;
+    # Emacs line editing (Ctrl+A/E/K/U/W, Alt+B/F). Without this zsh picks the
+    # keymap itself, and its rule is "vi keymap if $EDITOR or $VISUAL contains
+    # 'vi'" — which vim does, so the vim-as-editor setting above silently put
+    # the command line in vi insert mode, where Ctrl+A and Ctrl+E are unbound.
+    defaultKeymap = "emacs";
     autosuggestion.enable = true;
     syntaxHighlighting.enable = true;
     history = {
