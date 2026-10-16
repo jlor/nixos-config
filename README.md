@@ -20,6 +20,7 @@ terminal. Everything, dotfiles included, is deployed from this repo by comin.
 | `templates/` | Project dev shells (`devshell node` etc.) |
 | `secrets.nix`, `.sops.yaml`, `secrets/` | Encrypted secrets (sops + age) |
 | `security.nix` | 1Password, YubiKey (touch-to-sudo, disk unlock) |
+| `nas.nix` | On-demand NFS mounts from the NAS under `~/nas` |
 | `.github/workflows/ci.yml`, `ci/` | CI: checks every push and pull request |
 | `renovate.json` | Weekly update PRs (flake inputs, GitHub Actions) |
 | `wallpapers/` | Landscape + portrait wallpapers (desktop and login screen) |
@@ -331,12 +332,52 @@ to use them, plus optionally your YubiKey. All set up by the bootstrap.
   ```
 
   then point whatever needs it at that path.
-- Already in use: `git_email` (rendered into a git config snippet that git includes) and
-  `u2f_keys` (the YubiKey registration for touch-to-sudo).
+- Already in use: `git_email` (rendered into a git config snippet that git includes),
+  `u2f_keys` (the YubiKey registration for touch-to-sudo) and `nas_host` (the NAS
+  address, see "NAS shares").
 - A secret's feature switches on by itself once the key exists in the file: `secrets.nix`
   reads the key names, which sops leaves unencrypted.
 - After a reinstall the desktop has a new key; bootstrap swaps it into `.sops.yaml` and
   re-encrypts the file (`sops updatekeys`). That needs your personal key, so keep it safe.
+
+## NAS shares
+
+Two NFS shares from the NAS appear under `~/nas`:
+
+| Path | Share on the NAS |
+|---|---|
+| `~/nas/media` | `/volume1/media` |
+| `~/nas/backup` | `/volume2/backup` |
+
+They're mounted on demand by autofs (`nas.nix`): nothing is mounted until you `cd` into
+one, and it unmounts again after 10 idle minutes. **Away from the home network nothing
+breaks** — there's no mount to fail at boot and no unit left in a failed state. `ls ~/nas`
+still lists both directories; only reaching inside one fails, after about 6 seconds
+(`soft,timeo=30,retrans=2`), with an I/O error instead of a hung process.
+
+The NAS address is the secret `nas_host`, so it's not in this public repo. autofs is used
+instead of `fileSystems`/`x-systemd.automount` precisely because it reads its map at
+runtime: a `fileSystems.<path>.device` would put the address in `/etc/fstab` and the
+world-readable Nix store. The share paths and mount options are not secret and stay in
+`nas.nix`.
+
+Day-to-day:
+
+```sh
+ls ~/nas/media              # triggers the mount
+findmnt -t nfs              # what's mounted right now
+systemctl status autofs     # and journalctl -u autofs if a mount fails
+```
+
+- **Changing a share or an option:** edit `shares` / `nfsOptions` in `nas.nix`.
+- **Changing the NAS address:** `sops secrets/secrets.yaml`. sops-nix re-renders the map
+  and reloads autofs; a share already mounted from the old address stays until it goes
+  idle (or `sudo umount ~/nas/<share>`).
+- **Ownership:** the mounts use NFSv3, which passes numeric uid/gid through unchanged, so
+  files owned by uid 1000 on the NAS show up as yours. The NAS also offers NFSv4, but
+  without a shared idmapd domain v4 would report everything as `nobody:nobody`.
+
+`~/nas` itself is created by autofs and holds no data of its own, so it needs no backup.
 
 ## Battle.net
 
