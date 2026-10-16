@@ -154,13 +154,19 @@ in
     # than 24 hours).
     completionInit = ''
       autoload -Uz compinit
-      _zcompdump_fresh=(''${ZDOTDIR:-$HOME}/.zcompdump(N.mh-24))
+      _zcompdump=''${ZDOTDIR:-$HOME}/.zcompdump
+      _zcompdump_fresh=($_zcompdump(N.mh-24))
       if (( $#_zcompdump_fresh )); then
-        compinit -C
+        compinit -C -d $_zcompdump
       else
-        compinit
+        compinit -d $_zcompdump
+        # compinit only rewrites the dump when the set of completion functions
+        # actually changed, so its mtime can sit unchanged for weeks. Without
+        # this touch the check above never goes true again and every shell takes
+        # the slow path — the cache would silently never engage.
+        touch $_zcompdump
       fi
-      unset _zcompdump_fresh
+      unset _zcompdump _zcompdump_fresh
     '';
 
     # Type a prefix, then Up/Down walks only the history lines starting with it.
