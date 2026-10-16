@@ -68,6 +68,7 @@
         ./configuration.nix
         ./secrets.nix
         ./security.nix
+        ./nas.nix
         sops-nix.nixosModules.sops
 
         home-manager.nixosModules.home-manager

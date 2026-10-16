@@ -49,6 +49,13 @@ in
       secrets.u2f_keys = { owner = "jlor"; };
     })
 
+    # The NAS address, for the on-demand NFS mounts under ~/nas (see nas.nix).
+    # autofs reads its map file at runtime, so nas.nix renders the address into a
+    # template under /run/secrets instead of into the public store.
+    (lib.mkIf (has "nas_host") {
+      secrets.nas_host = { };
+    })
+
     # Add more secrets the same way, e.g.:
     #   (lib.mkIf (has "github_token") { secrets.github_token = { owner = "jlor"; }; })
   ];

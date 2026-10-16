@@ -62,6 +62,7 @@ A reinstall must get back to the known state with: install NixOS, run
 - `configuration.nix`: system (drivers, boot, login, services, system packages)
 - `home.nix`: user jlor via home-manager; links dotfiles from `config/`
 - `secrets.nix`: sops-nix; `security.nix`: 1Password, YubiKey, PAM, hyprlock
+- `nas.nix`: on-demand NFS mounts from the NAS under `~/nas` (autofs + a sops template)
 - `bootstrap.sh`: the `#bootstrap` app
 - `templates/`: project dev shells; `ci/`: CI-only files
 
