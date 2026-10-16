@@ -175,20 +175,75 @@ because `XQueryPointer` reports the pointer position regardless of input regions
 Wayland path work would need HDT to redesign its overlay, or a Wayland protocol that does not
 exist by design. **Do not retry this without one of those changing.**
 
-## Next steps for the stale-pixel bug
+## Test plan for the stale-pixel bug
 
-With Wayland ruled out, the remaining leads are all on the X11 path:
+**We do not know the cause.** The same overlay demonstrably worked on the previous Omarchy
+install via `omarchy-hdt`, so it is solvable, and the useful question is *which difference
+matters* — not which theory sounds right. The steps below are ordered most- to least-likely
+to produce a working overlay. Stop at the first one that works, then diff it against the
+current setup to find the responsible difference.
 
-1. [thaylorz/proton-ge-custom](https://github.com/thaylorz/proton-ge-custom/releases) — the
-   author of the layered-overlay patches ships test builds; worth checking for newer
-   layered-overlay work than what landed in 11-7, and worth reporting the stale pixels there
-   since this is exactly that patch set's territory.
-2. Work out whether the stale content is Wine never clearing the layered-window buffer, or
-   WPF only submitting dirty rectangles through `UpdateLayeredWindow`. `WINEDEBUG=+x11drv`
-   around a tab switch should show which, and decides whether this is a Wine bug worth
-   filing upstream.
-3. If Hyprland ever gains a per-window damage-tracking override, the `hdt-damage-tracking`
-   hook can go away entirely.
+Note on that earlier success: Omarchy ran Wine on **XWayland inside a Wayland session**.
+`omarchy-hdt` never sets `PROTON_USE_WAYLAND`, so it used `winex11.drv` — the same path as
+the current setup. "It worked on Wayland" is not in conflict with the Wayland findings above.
+
+Baseline to compare against: transparency, click-through and clickable widgets all work;
+stale content persists when switching tabs inside the overlay.
+
+### 1. Run `omarchy-hdt` as designed
+
+The tool that is known to have worked, used the way it was intended rather than cherry-picked.
+Self-contained: its own prefix (`~/Games/hearthstone-hdt-omarchy`), its own Proton. Does not
+touch the existing Battle.net install.
+
+```sh
+python3 hdt.py install     # from a clone of Smaddermand/hearthstone-hdt-omarchy
+```
+
+Needs `GE-Proton11-6-x86_64` in `~/.local/share/Steam/compatibilitytools.d/`.
+
+If the overlay is clean here, diff its prefix and launch environment against ours — the
+answer is then one of the differences in step 2-5, identified by evidence rather than guesswork.
+
+### 2. GE-Proton11-6 instead of 11-7
+
+Cheapest single-variable change from the current working-ish state: point
+`custom_wine_path` at 11-6 in the Lutris config. `omarchy-hdt` pins 11-6 explicitly, and
+the layered-overlay code does differ slightly (11-7 adds `layered_overlay_input_shape_enabled`).
+Earlier reasoning dismissed the version difference as implausible; that was an assumption,
+not a measurement.
+
+### 3. A separate, clean Wine prefix for HDT
+
+`omarchy-hdt` clones the Battle.net prefix and runs HDT from its own copy. HDT and the game
+have shared one prefix here throughout. The current prefix has also accumulated a lot of
+history: three different Proton builds, a `wineboot -u` repair, and a batch of system32
+files that had been copied read-only from the Nix store and needed `chmod u+w`.
+
+### 4. Materialise the Windows DLLs, as `prepare_dotnet_files` does
+
+`omarchy-hdt` walks `drive_c/windows`, replaces every symlink with a real file and makes
+everything user-writable, on the grounds that "native .NET replaces framework and system
+DLLs; never write through Proton links". We hit a related symptom (the read-only `.nls`
+files) and fixed only the permissions, not the symlinks.
+
+### 5. Virtual desktop, in a *separate* prefix
+
+`explorer /desktop=HearthstoneHDT,2560x1440`. This was tried in the **shared** prefix, where
+a second app mapping a window inside it crashed with an X11 `BadWindow` error. Untested in a
+dedicated prefix, which is how `omarchy-hdt` actually uses it.
+
+### 6. Gather evidence, if none of the above works
+
+`WINEDEBUG=+x11drv` around a tab switch, grepping for `layered overlay` and
+`update_layered_overlay_shape`, should show whether Wine redraws the full surface or only a
+dirty rectangle. That distinguishes "Wine never clears the buffer" from "WPF only submits
+dirty rects", and is the minimum needed before filing anything upstream with
+[thaylorz/proton-ge-custom](https://github.com/thaylorz/proton-ge-custom), who wrote these
+patches.
+
+Not an option: downgrading HDT. 1.58.10 is still on disk and predates the regression window,
+but older HDT builds do not work with the current Hearthstone version.
 
 ## Related
 
