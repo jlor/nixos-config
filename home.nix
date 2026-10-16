@@ -137,8 +137,42 @@ in
     # 'vi'" — which vim does, so the vim-as-editor setting above silently put
     # the command line in vi insert mode, where Ctrl+A and Ctrl+E are unbound.
     defaultKeymap = "emacs";
+    # A bare directory name cds into it: `..`, `Downloads`, `/etc`. Without this,
+    # zsh treats `..` as a path, tries to *execute* the directory and reports the
+    # resulting EACCES as "permission denied" — confusing, and unrelated to the
+    # "command not found" you get for any other directory name.
+    autocd = true;
     autosuggestion.enable = true;
     syntaxHighlighting.enable = true;
+
+    # compinit is the single biggest cost in zsh startup: run plainly it re-scans
+    # every directory in $fpath for insecure permissions on every new shell.
+    # Rebuild the dump at most once a day and load the cached one otherwise
+    # (-C skips the scan). Filename generation happens in array assignment but
+    # not inside [[ ]], hence the array: it's empty when the dump is missing or
+    # older than 24h (N = no error if absent, . = regular file, mh-24 = younger
+    # than 24 hours).
+    completionInit = ''
+      autoload -Uz compinit
+      _zcompdump_fresh=(''${ZDOTDIR:-$HOME}/.zcompdump(N.mh-24))
+      if (( $#_zcompdump_fresh )); then
+        compinit -C
+      else
+        compinit
+      fi
+      unset _zcompdump_fresh
+    '';
+
+    # Type a prefix, then Up/Down walks only the history lines starting with it.
+    # Distinct from fzf's Ctrl+R: this keeps your hands on the arrow keys.
+    plugins = [
+      {
+        name = "history-substring-search";
+        src = pkgs.zsh-history-substring-search;
+        file = "share/zsh/plugins/zsh-history-substring-search/zsh-history-substring-search.zsh";
+      }
+    ];
+
     history = {
       size = 50000;
       save = 50000;
@@ -155,6 +189,84 @@ in
     initContent = ''
       # Prompt: Spaceship (settings in ~/.config/spaceship.zsh)
       source ${pkgs.spaceship-prompt}/lib/spaceship-prompt/spaceship.zsh
+
+      ############################################################
+      # Keys bare zsh leaves unbound
+      ############################################################
+      # `bindkey -e` covers Alt+B/F and Ctrl+W/K/U, but not these: without them
+      # Home, End, Delete and Ctrl+arrows do nothing at all. oh-my-zsh binds them
+      # in lib/key-bindings.zsh, which is why they work on an OMZ machine.
+      # Terminals disagree about normal vs application cursor mode, so bind both
+      # forms of each key rather than relying on one.
+      bindkey '^[[H'    beginning-of-line     # Home
+      bindkey '^[OH'    beginning-of-line
+      bindkey '^[[1~'   beginning-of-line
+      bindkey '^[[7~'   beginning-of-line
+      bindkey '^[[F'    end-of-line           # End
+      bindkey '^[OF'    end-of-line
+      bindkey '^[[4~'   end-of-line
+      bindkey '^[[8~'   end-of-line
+      bindkey '^[[3~'   delete-char           # Delete
+      bindkey '^[[1;5D' backward-word         # Ctrl+Left
+      bindkey '^[[1;5C' forward-word          # Ctrl+Right
+      bindkey '^[[1;3D' backward-word         # Alt+Left
+      bindkey '^[[1;3C' forward-word          # Alt+Right
+      bindkey '^[[3;5~' kill-word             # Ctrl+Delete
+
+      # Substring-filtered history on Up/Down (zsh-history-substring-search,
+      # loaded above by programs.zsh.plugins). Bound here so it wins over the
+      # plain up-line-or-history the emacs keymap installs.
+      # Trade-off: Up no longer moves between the lines of a multi-line command,
+      # because this widget always searches history. Ctrl+P / Ctrl+N keep the
+      # old up-line-or-history behaviour, which does move within the buffer
+      # first — use those when editing a multi-line command.
+      bindkey '^[[A' history-substring-search-up
+      bindkey '^[[B' history-substring-search-down
+      bindkey '^[OA' history-substring-search-up
+      bindkey '^[OB' history-substring-search-down
+
+      ############################################################
+      # Completion behaviour (oh-my-zsh's lib/completion.zsh)
+      ############################################################
+      zmodload zsh/complist
+      zstyle ':completion:*' menu select
+      # Case-insensitive first, then partial-word: `cd dow`<Tab> finds Downloads,
+      # `cd u/s/f`<Tab> finds usr/share/fonts.
+      zstyle ':completion:*' matcher-list 'm:{a-zA-Z-_}={A-Za-z_-}' 'r:|=*' 'l:|=* r:|=*'
+      zstyle ':completion:*' list-colors ''${(s.:.)LS_COLORS}
+      zstyle ':completion:*' group-name ""
+      zstyle ':completion:*:descriptions' format '%F{magenta}-- %d --%f'
+      zstyle ':completion:*' special-dirs true   # offer ./ and ../
+      zstyle ':completion:*' use-cache on
+      zstyle ':completion:*' cache-path ''${XDG_CACHE_HOME:-$HOME/.cache}/zsh/zcompcache
+
+      ############################################################
+      # Directory stack (oh-my-zsh's lib/directories.zsh)
+      ############################################################
+      # Every cd pushes onto the stack, so `-` bounces back to where you just
+      # were — the one thing zoxide doesn't give you, since it jumps by frecency
+      # rather than by history. zoxide's cd wrapper passes `-` and `-<n>` through
+      # to builtin cd untouched, so these work through it.
+      setopt AUTO_PUSHD PUSHD_IGNORE_DUPS PUSHD_SILENT PUSHD_MINUS
+      alias d='dirs -v | head -10'
+      alias -- -='cd -'
+      for index in {1..9}; do alias "$index"="cd -$index"; done
+      unset index
+
+      ############################################################
+      # Small comforts
+      ############################################################
+      setopt INTERACTIVE_COMMENTS   # `#` starts a comment at the prompt too
+
+      # Colored man pages (oh-my-zsh's colored-man-pages plugin). less renders
+      # bold/underline through these termcap hooks; without them man is monochrome.
+      export LESS_TERMCAP_mb=$'\e[1;31m'    # blink  -> red
+      export LESS_TERMCAP_md=$'\e[1;35m'    # bold   -> mauve-ish
+      export LESS_TERMCAP_me=$'\e[0m'
+      export LESS_TERMCAP_so=$'\e[1;44;37m' # search highlight
+      export LESS_TERMCAP_se=$'\e[0m'
+      export LESS_TERMCAP_us=$'\e[1;36m'    # underline -> cyan
+      export LESS_TERMCAP_ue=$'\e[0m'
 
       # New project dev shell from a template in this repo, e.g. `devshell node`.
       # Creates flake.nix + .envrc; direnv then loads the tools whenever you cd in.
