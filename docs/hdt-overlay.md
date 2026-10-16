@@ -93,15 +93,20 @@ around the game:
 ```yaml
 system:
   prelaunch_command: /home/jlor/.local/bin/hdt-damage-tracking off
+  prelaunch_wait: true
   postexit_command: /home/jlor/.local/bin/hdt-damage-tracking on
 ```
 
-Two gotchas that cost time:
+Three gotchas that cost time:
 
 - Lutris checks `path_exists(command_array[0])` before running a hook, so the command must
   be a **real file at an absolute path**. A bare `hyprctl ...` is silently skipped.
 - Lutris runs hooks in its own sandbox, which does not inherit `HYPRLAND_INSTANCE_SIGNATURE`.
   The script falls back to the single running instance from `$XDG_RUNTIME_DIR/hypr`.
+- `prelaunch_wait` defaults to **false**, i.e. Lutris fires the hook and starts the game
+  immediately. The overlay then maps before damage tracking is off, misses its first full
+  paint, and only redraws where the cursor goes — the exact symptom the hook is meant to
+  prevent. Set it to `true`.
 
 ## Reproducibility gap
 
