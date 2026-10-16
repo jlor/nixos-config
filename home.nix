@@ -33,6 +33,43 @@ in
   # Wallpapers at a stable path, used by hyprland.lua
   home.file.".local/share/wallpapers".source = ./wallpapers;
 
+  # WIP (see docs/hdt-overlay.md). Hearthstone Deck Tracker's overlay is only repainted in
+  # damaged regions, so with Hyprland's damage tracking on, only the part under the cursor
+  # draws. Turning it off fixes that but makes the compositor redraw every frame on every
+  # workspace, which is wasteful the 99% of the time no game is running. So flip it per
+  # game instead, from Lutris' prelaunch/postexit hooks:
+  #
+  #   prelaunch_command: /home/jlor/.local/bin/hdt-damage-tracking off
+  #   postexit_command:  /home/jlor/.local/bin/hdt-damage-tracking on
+  #
+  # Lutris requires the first token to be an existing file, so these must be a real script
+  # at an absolute path - a bare `hyprctl ...` is silently skipped.
+  home.file.".local/bin/hdt-damage-tracking" = {
+    executable = true;
+    text = ''
+      #!${pkgs.runtimeShell}
+      # Toggle Hyprland's damage tracking. "off" while a game with a layered overlay runs,
+      # "on" to restore the default afterwards.
+      set -eu
+
+      # Lutris runs hooks inside its own sandbox, which does not inherit the Hyprland
+      # instance signature; fall back to the single running instance.
+      if [ -z "''${HYPRLAND_INSTANCE_SIGNATURE:-}" ]; then
+        HYPRLAND_INSTANCE_SIGNATURE=$(ls -1 "''${XDG_RUNTIME_DIR:-/run/user/$(id -u)}/hypr" 2>/dev/null | head -1)
+        export HYPRLAND_INSTANCE_SIGNATURE
+      fi
+
+      case "''${1:-}" in
+        off) value=0 ;;
+        on)  value=2 ;;  # 2 = Hyprland's default
+        *)   echo "usage: ''${0##*/} on|off" >&2; exit 2 ;;
+      esac
+
+      exec ${pkgs.hyprland}/bin/hyprctl \
+        eval "hl.config({ debug = { damage_tracking = $value } })"
+    '';
+  };
+
   ############################################################
   # Look & feel: dark GTK apps, icons, cursor
   ############################################################

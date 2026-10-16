@@ -126,15 +126,6 @@ hl.config({
         accel_profile = "flat",        -- raw mouse input for games
         sensitivity   = 0,
     },
-
-    -- WIP (see docs/hdt-overlay.md): Hearthstone Deck Tracker's transparent overlay is
-    -- only repainted in damaged regions, so with damage tracking on, just the area under
-    -- the cursor draws and the rest of the overlay vanishes. 0 = redraw everything, every
-    -- frame. This is a GLOBAL setting with a real power/perf cost on an always-on desktop,
-    -- which is why this branch isn't merged yet.
-    debug = {
-        damage_tracking = 0,
-    },
 })
 
 -- Animation curves (Hyprland defaults: smooth, springy windows)

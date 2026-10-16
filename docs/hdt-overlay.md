@@ -16,7 +16,7 @@ This worked on the previous Omarchy install, so it is achievable on Hyprland.
 | See-through (game visible through transparent areas) | yes |
 | Click-through (clicks on empty areas reach the game) | yes |
 | Overlay's own widgets clickable (Tier7 tabs etc.) | yes |
-| Whole overlay stays drawn (not just under the cursor) | yes, **needs `damage_tracking = 0`** |
+| Whole overlay stays drawn (not just under the cursor) | yes, via the per-game `damage_tracking` hook |
 | Old content cleared when the overlay changes | **no — stale pixels persist** |
 
 The one open bug: switching tabs inside the overlay leaves the previous content drawn
@@ -79,17 +79,29 @@ often the readback runs; it does not fix the stale-pixel bug.
   `SUPER` + drag moves the overlay and it does not snap back, even after restarting HDT.
 - `no_follow_mouse` — hovering must not move focus to the overlay.
 
-### 3. Global damage tracking (in this repo, and the reason this isn't merged)
+### 3. Damage tracking, toggled per game (in this repo)
 
-`debug:damage_tracking = 0`.
+The overlay is only repainted in damaged regions. With Hyprland's damage tracking on,
+**only the part of the overlay under the mouse cursor is drawn** and the rest disappears.
+`debug:damage_tracking = 0` forces full redraws and fixes it completely.
 
-The overlay is only repainted in damaged regions. With damage tracking on, **only the part
-of the overlay under the mouse cursor is drawn** and the rest disappears. Forcing full
-redraws fixes it completely.
+That is a global compositor setting though: every frame of every workspace gets fully
+redrawn, which wastes power the 99% of the time no game is running. So rather than setting
+it globally, `home.nix` installs `~/.local/bin/hdt-damage-tracking` and Lutris flips it
+around the game:
 
-This is a global compositor setting, not scoped to the game: every frame of every workspace
-is fully redrawn, which costs power and GPU time on an always-on desktop. That trade-off is
-the main blocker for merging.
+```yaml
+system:
+  prelaunch_command: /home/jlor/.local/bin/hdt-damage-tracking off
+  postexit_command: /home/jlor/.local/bin/hdt-damage-tracking on
+```
+
+Two gotchas that cost time:
+
+- Lutris checks `path_exists(command_array[0])` before running a hook, so the command must
+  be a **real file at an absolute path**. A bare `hyprctl ...` is silently skipped.
+- Lutris runs hooks in its own sandbox, which does not inherit `HYPRLAND_INSTANCE_SIGNATURE`.
+  The script falls back to the single running instance from `$XDG_RUNTIME_DIR/hypr`.
 
 ## Reproducibility gap
 
@@ -123,15 +135,55 @@ Do not re-test these; they had no effect on the black/transparency problem:
 - Hyprland's `_NET_WM_CM_S0` not being claimed: real, but Wine's X11 driver never consults
   that atom, so it is a red herring here.
 
+### `PROTON_USE_WAYLAND=1` — tested, and a dead end
+
+Proton's native Wayland driver looked like the obvious fix: no XWayland, no XShape, and no
+alpha readback (the suspected cause of the stale pixels). It half worked and then hit a wall
+that configuration cannot move.
+
+Tested on both the Battle.net and HDT Lutris entries. Results:
+
+- every window became native Wayland (`xwayland: false` in `hyprctl clients`), game included
+- the overlay was transparent and click-through
+- **the overlay's widgets were completely dead**, and
+- the overlay could not place itself: it came up as a small window in a corner. Wayland does
+  not let a client set its own position, so it only lined up after being moved and resized by
+  hand, which would not survive a restart.
+
+Why the widgets are dead, and why no flag fixes it:
+
+- `winewayland.so` contains **no reference to the `WINE_LAYERED_OVERLAY_*` flags at all** —
+  they are `winex11`-only. There is nothing to tune on this path.
+- HDT's overlay is deliberately click-through: *"The Battlegrounds in-game overlay uses a
+  click-through WS_EX_TRANSPARENT window model"* (`Controls/Overlay/Battlegrounds/OverlayButton.cs`).
+  It then polls the **global cursor position** (`GetCursorPos` in `Utility/User32.cs`,
+  `Windows/OverlayWindow.MouseOverDetection.cs`) and does its own hit-testing to decide when
+  something should be interactive.
+- Wine's Wayland driver correctly sets an empty input region for
+  `WS_EX_TRANSPARENT | WS_EX_LAYERED` (Wine MR !9204), matching Windows.
+- But Wayland deliberately does not expose a global pointer position to clients, and with an
+  empty input region the surface receives no pointer events at all — so HDT can never learn
+  that the cursor is over a widget.
+
+Both layers are behaving correctly; the combination simply cannot work. X11 works precisely
+because `XQueryPointer` reports the pointer position regardless of input regions. Making the
+Wayland path work would need HDT to redesign its overlay, or a Wayland protocol that does not
+exist by design. **Do not retry this without one of those changing.**
+
 ## Next steps for the stale-pixel bug
 
-1. `PROTON_USE_WAYLAND=1` — Proton's native Wayland driver bypasses XWayland and this whole
-   shape/visual layer. Untried, and the entire problem class is an XWayland artifact.
-2. [thaylorz/proton-ge-custom](https://github.com/thaylorz/proton-ge-custom/releases) — the
+With Wayland ruled out, the remaining leads are all on the X11 path:
+
+1. [thaylorz/proton-ge-custom](https://github.com/thaylorz/proton-ge-custom/releases) — the
    author of the layered-overlay patches ships test builds; worth checking for newer
-   layered-overlay work than what landed in 11-7.
-3. Narrow `damage_tracking` — if Hyprland gains a per-window equivalent, the global setting
-   (and the merge blocker) goes away.
+   layered-overlay work than what landed in 11-7, and worth reporting the stale pixels there
+   since this is exactly that patch set's territory.
+2. Work out whether the stale content is Wine never clearing the layered-window buffer, or
+   WPF only submitting dirty rectangles through `UpdateLayeredWindow`. `WINEDEBUG=+x11drv`
+   around a tab switch should show which, and decides whether this is a Wine bug worth
+   filing upstream.
+3. If Hyprland ever gains a per-window damage-tracking override, the `hdt-damage-tracking`
+   hook can go away entirely.
 
 ## Related
 
