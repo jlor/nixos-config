@@ -190,6 +190,64 @@ the current setup. "It worked on Wayland" is not in conflict with the Wayland fi
 Baseline to compare against: transparency, click-through and clickable widgets all work;
 stale content persists when switching tabs inside the overlay.
 
+### Results so far
+
+Steps 1-4 and 6 have been run. All negative; the ghosting is unchanged by every variable we
+control.
+
+| Tested | Result |
+|---|---|
+| `omarchy-hdt` as designed | **cannot run** — see below |
+| GE-Proton11-6 instead of 11-7 | ghosting unchanged |
+| Clean separate prefix (64G clone) | ghosting unchanged |
+| Materialised (non-symlinked) DLLs | ghosting unchanged |
+| Virtual desktop | **cannot enable** under Proton |
+| `WINEDEBUG=+x11drv` trace | **cannot measure** — see below |
+
+**`omarchy-hdt` is obsolete.** It downloads a portable `Hearthstone.Deck.Tracker-v{tag}.zip`
+from `HearthSim/Hearthstone-Deck-Tracker`, whose last release is v1.55.6 (August 2026). HDT
+releases moved to `HearthSim/HDT-Releases`, which publishes only `HDT-Installer.exe` and
+Squirrel `.nupkg` files — the zip it needs no longer exists, so this is not a repo-URL fix.
+Its install did get as far as cloning the prefix and running `prepare_dotnet_files`, which is
+how steps 3 and 4 came to be tested for free.
+
+**The virtual desktop cannot be enabled under Proton.** Setting
+`HKCU\Software\Wine\Explorer\Desktop` + `Explorer\Desktops\Default` has no effect: the apps
+still map as separate XWayland windows. Lutris agrees — it marks the option "no longer
+supported", hides it for Proton/GE runners and warns if used. (Proton's own
+`explorer.exe /desktop` process is unrelated routine startup, not a virtual desktop.)
+
+**The trace cannot be captured.** `WINEDEBUG=+x11drv` produces ~1 GB/min and slows Wine so
+much that HDT never paints the overlay at all — 5.3 GB and 34.7M lines with *zero*
+`layered overlay` lines, and the overlay window eventually disappearing. The instrument
+prevents the phenomenon. Wine's debug channels can't be narrowed below `x11drv` and the
+messages we want are trace-class, so there is no lighter setting. Getting a mechanism this
+way would require patching Wine with targeted logging.
+
+Two notes for anyone picking this up:
+
+- Lutris forces `WINEDEBUG=-all` via its `show_debug` runner option, which overrides
+  `system.env`. Set `show_debug: inherit`. Game stdout also goes to Lutris' in-memory log
+  window, not a file; `PROTON_LOG=+x11drv` plus `PROTON_LOG_DIR` makes Proton write it to
+  disk *and* append the channel to `WINEDEBUG`.
+- Launching HDT outside Lutris does not work for this: each `umu-run` gets its own bwrap
+  container with a private `/tmp`, so HDT lands in a different wineserver session than the
+  Lutris-launched game, never finds its window, and never creates an overlay. Both must be
+  launched the same way.
+
+**Correction to an earlier assumption.** The ghosting was wrongly attributed to an HDT
+regression in 1.59.x. It is not: it was already present on 1.58.10, in the same session where
+`damage_tracking = 0` removed the *flicker*. Flicker and ghosting are separate symptoms and
+only the flicker was fixed. The ghosting has now been seen on 1.58.10 and 1.59.3, on
+GE-Proton 11-6 and 11-7, in SHAPE and ALPHA modes, and in both a battle-scarred and a clean
+prefix. Downgrading HDT is also pointless for a different reason: 1.58.10 lacks the current
+patch's card data.
+
+**What is left.** Only Hyprland's own version is untested — your working Omarchy setup ran an
+older release, and 0.55 has documented regressions. That is testable on NixOS by overriding
+the `hyprland` package to an older revision, at the cost of a long build and some risk to the
+session. Everything else in our control has been eliminated by direct test.
+
 ### 1. Run `omarchy-hdt` as designed
 
 The tool that is known to have worked, used the way it was intended rather than cherry-picked.
