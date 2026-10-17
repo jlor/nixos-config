@@ -69,6 +69,8 @@
         ./secrets.nix
         ./security.nix
         ./nas.nix
+        ./simracing.nix
+        ./vr.nix
         sops-nix.nixosModules.sops
 
         home-manager.nixosModules.home-manager

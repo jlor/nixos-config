@@ -292,7 +292,11 @@ in
     isNormalUser = true;
     description = username;
     shell = pkgs.zsh;
-    extraGroups = [ "wheel" "networkmanager" "gamemode" ];
+    # uinput: lets Boxflat publish the Moza base's stalk switches as a virtual
+    # joystick (see simracing.nix). /dev/uinput is a static node, so it gets
+    # root:uinput 0660 at boot and never a per-login ACL — group membership is
+    # the only way in.
+    extraGroups = [ "wheel" "networkmanager" "gamemode" "uinput" ];
   };
 
   ############################################################
