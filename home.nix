@@ -197,6 +197,19 @@ in
       source ${pkgs.spaceship-prompt}/lib/spaceship-prompt/spaceship.zsh
 
       ############################################################
+      # Where a "word" ends (Ctrl+W, Alt+B/F, Ctrl+Left/Right)
+      ############################################################
+      # These widgets treat alphanumerics plus every character in $WORDCHARS as
+      # part of a word. zsh's default $WORDCHARS contains "/", so at the end of
+      #   scp dev:/opt/k8s-migration/README.md
+      # Ctrl+W swallows the whole path back to the ":" — the first character
+      # that happens not to be in the list. Dropping "/" makes a path separator
+      # end a word, so Ctrl+W deletes one segment at a time (README.md, then
+      # /k8s-migration, then /opt). Derived from the default rather than spelled
+      # out, so the rest of the list stays whatever zsh ships.
+      WORDCHARS=''${WORDCHARS//\/}
+
+      ############################################################
       # Keys bare zsh leaves unbound
       ############################################################
       # `bindkey -e` covers Alt+B/F and Ctrl+W/K/U, but not these: without them
