@@ -104,9 +104,15 @@ cleared after 5 seconds. Vaults searched: `config/elephant/1password.toml`.
 
 | Use | How |
 |---|---|
-| sudo, the lock screen, admin prompts | Touch the key instead of typing your password (password still works) |
+| sudo, admin prompts | Touch the key instead of typing your password (password still works) |
+| Lock screen | Press Enter on the empty field, then touch the key when it asks |
 | Disk unlock at boot | Touch the key (PIN if set), or type the passphrase |
 | Secrets (optional) | Opens `secrets/secrets.yaml` like your 1Password key does |
+
+On the lock screen the touch prompt only appears once PAM is running, and PAM only
+starts when you submit the field — so Enter first, on an empty field, then touch.
+Typing your password works too, but with the key plugged in you wait for `pam_u2f`
+to time out before the password is even checked; pull the key to skip that.
 
 The login screen still asks for your password, because that also unlocks the keyring.
 `ykman info` shows the key's state. The bootstrap registers one YubiKey. A replacement or
