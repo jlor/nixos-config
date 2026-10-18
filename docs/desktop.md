@@ -30,17 +30,28 @@ Four apps start themselves and land in the same place every time
 | ZapZap | Tray only — no window until you click it |
 | kitty | Main screen (workspace 1) |
 
-Each one is launched with a window rule attached to that command alone, so
-opening Firefox or Discord by hand later still puts the window wherever you are.
-The rule covers the first window a command opens (Hyprland's
+Firefox and the terminal are placed by a rule attached to their launch command
+alone, so opening Firefox by hand later still puts the window wherever you are.
+That rule covers the first window the command opens (Hyprland's
 `misc:initial_workspace_tracking`), so if your last session had several Firefox
 windows, the rest come back wherever Firefox puts them.
 
-Firefox and Discord are ordered rather than just assigned a workspace, because
-dwindle picks which side of a split a new window takes from where the cursor is,
-and at login the cursor is on the main screen. So Firefox goes first, Discord
-follows once Firefox has a window, and if the pair comes out upside down they're
-swapped. Nothing about this changes how windows open the rest of the time.
+Discord is the exception: it's placed by an ordinary window rule on its class,
+so it goes to the portrait screen whenever it opens, not just at login. A launch
+rule doesn't work for it — Hyprland ties that rule to the exact process it
+started and spends it on the first window that process maps, and Discord's first
+window isn't the one you end up looking at, so the real window arrived with the
+rule already gone. A class rule has no process in it. This is safe to apply
+globally for Discord in a way it wouldn't be for Firefox, because Discord is
+single-instance: there's only ever one window for it to catch.
+
+Their *order* needs more than a workspace, because dwindle picks which side of a
+split a new window takes from where the cursor is, and at login the cursor is on
+the main screen. So Firefox goes first, Discord follows once Firefox has a
+window, and if the pair comes out upside down Firefox is swapped back up. If
+Discord somehow isn't on the portrait screen by then, it's moved there rather
+than the stacking being skipped. Nothing here changes how windows open the rest
+of the time.
 
 Restored tabs come from Firefox's own session store, set by policy
 (`Homepage.StartPage = "previous-session"` in `configuration.nix`). It's a default,
