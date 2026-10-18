@@ -247,6 +247,19 @@ in
     lutris          # install Battle.net through this
     mangohud        # FPS overlay: mangohud %command%
     protonup-qt
+    # The two things the SimHub installer wants from the system (see
+    # docs/gaming.md). It checks for winetricks up front and stops without it,
+    # then reaches for unzip part way through, to unpack SimHub itself.
+    #
+    # Deliberately not paired with pkgs.wine: that installer builds and manages
+    # its own Wine under ~/linux-simracing-utils/bin, newer than the one in
+    # nixpkgs, and a second wine on PATH is only a chance to use the wrong one.
+    # nixpkgs' winetricks doesn't bundle Wine either, so it picks up whichever
+    # is on PATH. Everything else it needs it fetches itself: patchelf and the
+    # loader come from its own pinned nixpkgs, and the desktop-menu tools it
+    # touches at the end are all behind `command -v` guards.
+    winetricks
+    unzip
 
     # Development (git, gh, vim, direnv, fzf, Claude Code etc. are set up per user in home.nix)
     vscode
