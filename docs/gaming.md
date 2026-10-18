@@ -56,6 +56,18 @@ its installer to Steam, force Proton Experimental, and launch it with
 option naming it, e.g. `SDL_JOYSTICK_WHEEL_DEVICES=0x346e/0x0004 %command%` (ids from
 `lsusb`).
 
+**Assetto Corsa EVO** needs nothing installed — Steam, Proton and the wheel are already
+set up. It's a DX12 title, so it runs through VKD3D, and if the launcher fails to appear
+set the launch option:
+
+```
+VKD3D_CONFIG=force_raw_va_cbv %command%
+```
+
+Expect some stuttering at certain track locations; that's a DX12-on-Linux limitation, not
+a configuration problem. The AMD interior/mirror glitches reported upstream are a Mesa
+issue and don't apply to the 5090.
+
 ### SimHub (haptics, dash, wind)
 
 The ForceFeel pad, the remapper bridge and the FT232 board all exist to be driven by
@@ -77,13 +89,25 @@ a user-owned Wine prefix. It lands in `~/linux-simracing-utils` (prefix under `p
 
 Two things the installer does *not* do, both per-prefix and manual:
 
-- **Serial devices.** SimHub looks for a COM port, not a `/dev/tty*`. For each board,
-  symlink it into the prefix and add the matching registry entry:
+- **Serial devices.** SimHub looks for a COM port, not a `/dev/tty*`. Map each board into
+  the prefix with a symlink under `dosdevices`.
+
+  Use the `/dev/serial/by-id/` path, never `/dev/ttyACM0`. The `ttyACM` numbers are
+  handed out in enumeration order and move between boots — the ForceFeel pad and the
+  Moza base have already swapped numbers on this machine. A `com*` symlink pointing at a
+  number will silently address the wrong board. `ls -l /dev/serial/by-id/` lists them:
+
   ```sh
-  cd ~/linux-simracing-utils/pfx/dosdevices && ln -s /dev/ttyUSB0 com5
+  cd ~/linux-simracing-utils/pfx/dosdevices
+  ln -s /dev/serial/by-id/usb-ForceFeel_ForceFeel_Pad-if00 com1
+  ln -s /dev/serial/by-id/usb-Unknown_SimHub_Controller_Remapper_Bridge_0123456789-if00 com2
+  ln -s /dev/serial/by-id/usb-FTDI_FT232R_USB_UART_A50285BI-if00-port0 com3
   ```
-  then add `"COM5"="/dev/ttyUSB0"` under `HKLM\Software\Wine\Ports` in that prefix. The
-  udev rules in `simracing.nix` are what make the node openable in the first place.
+
+  If a board still doesn't appear, add the same paths under `HKLM\Software\Wine\Ports`
+  in that prefix (`"COM1"="/dev/serial/by-id/…"`) — older Wine wants the registry entry
+  as well as the symlink. The udev rules in `simracing.nix` are what make the node
+  openable in the first place.
 - **Raw HID.** Wine gates hidraw behind an `EnableHidraw` registry list; the installer
   ships a helper that adds a device to it.
 
