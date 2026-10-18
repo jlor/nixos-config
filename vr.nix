@@ -54,6 +54,18 @@
           encoder = "nvenc";
           codec = "av1";
         };
+
+        # The overlay WiVRn starts with the session. wayvr (formerly
+        # wlx-overlay-s) puts this desktop's windows and a virtual keyboard on
+        # top of whatever is running, reachable from the controllers.
+        #
+        # Without it the headset is the only thing you can see, and anything
+        # that lives on the desktop is out of reach: a game's flat-screen menu,
+        # and keyboard focus. Input goes to whichever surface the compositor
+        # has focused, so with the headset on you are typing blind into some
+        # other window. This is the way back to the desktop without taking the
+        # headset off.
+        application = [ pkgs.wayvr ];
       };
     };
   };
