@@ -293,9 +293,9 @@ in
     description = username;
     shell = pkgs.zsh;
     # uinput: lets Boxflat publish the Moza base's stalk switches as a virtual
-    # joystick (see simracing.nix). /dev/uinput is a static node, so it gets
-    # root:uinput 0660 at boot and never a per-login ACL — group membership is
-    # the only way in.
+    # joystick (see simracing.nix). Boxflat's own udev rule does tag /dev/uinput
+    # with uaccess and logind does honour that, so this group is a backstop for
+    # the case where there is no seat to get an ACL from.
     extraGroups = [ "wheel" "networkmanager" "gamemode" "uinput" ];
   };
 
