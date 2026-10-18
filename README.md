@@ -428,6 +428,11 @@ NixOS otherwise leaves at `root:dialout 0660` and `root:root 0600`. Each device 
 there by vendor/product id — **add a line when you add a box to the rig**, or its
 `/dev/ttyACM*` stays unopenable.
 
+Add it to the `60-simracing.rules` block in that file, not to `services.udev.extraRules`.
+`TAG+="uaccess"` only grants anything if systemd's `73-seat-late.rules` sees the tag, and
+udev reads rule files in lexical order — `extraRules` is hardcoded to `99-local.rules`,
+which is read too late, so the tag is set but no ACL is ever applied.
+
 **Settings:** run `boxflat` for the Moza side (FFB strength, steering angle, pedal curves,
 LEDs). It's the Linux stand-in for Pit House and cannot flash firmware, so base firmware
 updates still need Pit House on Windows. Simagic's SimPro Manager is Windows-only too: add
