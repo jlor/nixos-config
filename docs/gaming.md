@@ -82,6 +82,11 @@ loader and runtime libraries, so it needs nothing from this config:
 curl -fsSL https://raw.githubusercontent.com/srounce/linux-simracing-utils/HEAD/install.sh | bash
 ```
 
+It prompts, so don't background it. `winetricks` has to be on PATH or it stops before
+doing anything — it's in `configuration.nix` for that reason. It brings its own Wine
+(`~/linux-simracing-utils/bin/wine`, 11 or newer required), which is why no `wine` package
+sits alongside it: a second, older wine on PATH is only a chance to use the wrong one.
+
 This is the one part of the rig that can't be declarative: proprietary Windows software in
 a user-owned Wine prefix. It lands in `~/linux-simracing-utils` (prefix under `pfx/`), and
 **that directory holds every ShakeIt profile you tune**, so back it up — see
