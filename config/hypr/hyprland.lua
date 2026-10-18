@@ -64,13 +64,31 @@ end
 -- likely to open above Firefox as below it. Rather than change force_split for
 -- every window everywhere, check the result once and swap if it came out upside
 -- down.
-local function stackApps()
+local function stackApps(tries)
+    tries = tries or 3
     local firefox = hl.get_windows({ class = "firefox", workspace = appWorkspace })[1]
-    local discord = hl.get_windows({ class = "discord", workspace = appWorkspace })[1]
+    local discord = hl.get_windows({ class = "discord" })[1]
     if not (firefox and discord) then return end
 
+    -- Discord is put here by the window rule in WINDOW RULES. If that ever fails
+    -- it must not leave this function silently doing nothing, which is how the
+    -- first version of this shipped a Discord stranded on the main screen: it
+    -- looked for Discord only on workspace 6, found none, and returned happy.
+    -- Move it and come back rather than giving up.
+    if (discord.workspace and discord.workspace.id) ~= appWorkspace then
+        if tries <= 0 then return end
+        hl.dispatch(hl.dsp.window.move({ window = discord, workspace = appWorkspace }))
+        hl.dispatch(hl.dsp.focus({ workspace = termWorkspace }))
+        hl.timer(function() stackApps(tries - 1) end, { timeout = 500, type = "oneshot" })
+        return
+    end
+
+    -- Firefox sitting lower than Discord means they came out the wrong way up.
+    -- Swap the *Firefox* window upwards, not Discord: in this situation Discord
+    -- is already the top tile, so asking it to move up finds nothing to swap
+    -- with and the correction quietly does nothing.
     if firefox.at.y > discord.at.y then
-        hl.dispatch(hl.dsp.focus({ window = discord }))
+        hl.dispatch(hl.dsp.focus({ window = firefox }))
         hl.dispatch(hl.dsp.window.swap({ direction = "up" }))
         -- Swapping needs the window focused, which drags focus to the portrait
         -- screen. Put it back where the "silent" launches left it.
@@ -99,9 +117,10 @@ hl.on("hyprland.start", function()
     -- Mark the left screen primary for X11 games (Battle.net, Wine).
     hl.exec_cmd("xrandr --output DP-1 --primary")
 
-    -- Apps. The second argument is a window rule applied to whatever this
-    -- command spawns, so it only places *these* windows: opening Firefox by hand
-    -- later still puts it wherever you are.
+    -- Apps. The second argument is a launch rule, applied to the window this
+    -- command maps, so it only places *these* windows: opening Firefox by hand
+    -- later still puts it wherever you are. Discord is the exception and is
+    -- placed by a plain window rule instead -- see WINDOW RULES for why.
     hl.exec_cmd(terminal, { workspace = termWorkspace .. " silent" })
     -- --hideStart sends ZapZap straight to the tray instead of opening a window.
     -- Passed on the command line rather than relying on its own "Start minimized"
@@ -112,7 +131,7 @@ hl.on("hyprland.start", function()
     -- Discord only once Firefox has a window, so it splits Firefox's tile
     -- instead of racing it for the empty workspace.
     whenMapped("firefox", function()
-        hl.exec_cmd("discord", { workspace = appWorkspace .. " silent" })
+        hl.exec_cmd("discord")
         -- Stacking only makes sense on the portrait screen. On a single
         -- landscape screen dwindle splits side by side instead, and two short
         -- wide windows are worse than the order it picks itself.
@@ -249,6 +268,25 @@ hl.window_rule({
     name  = "no-idle-when-fullscreen",
     match = { class = ".*" },
     idle_inhibit = "fullscreen",
+})
+
+-- Discord always lives on the portrait screen, next to Firefox (see AUTOSTART).
+--
+-- This is a plain window rule rather than a launch rule on the exec, because a
+-- launch rule is tied to the exact pid Hyprland spawned and is spent on the
+-- first window that pid maps. Discord's first window isn't the one you end up
+-- looking at, so by the time the real window appeared the rule was gone and it
+-- opened on whatever workspace was active. Measured: a launch rule survives a
+-- 25s delay fine, so it isn't a timeout -- it's the window it attaches to.
+--
+-- Safe to apply globally here in a way it wouldn't be for Firefox: Discord is
+-- single-instance, so there is only ever one window this can catch.
+hl.window_rule({
+    name  = "discord-on-portrait-screen",
+    -- initial_class, not class: it's fixed at map time, so an Electron app that
+    -- renames its class after the window appears can't slip past the rule.
+    match = { initial_class = "^discord$" },
+    workspace = appWorkspace .. " silent",
 })
 
 -- Small utility windows float, centred.
