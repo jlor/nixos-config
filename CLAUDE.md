@@ -2,8 +2,8 @@
 
 NixOS flake for jlor's desktop (hostname `desktop`): Ryzen 7 9800X3D, RTX 5090,
 two monitors (DP-1 Samsung landscape primary left, HDMI-A-1 Lenovo portrait right;
-port names used in hyprland.lua, waybar and the login screen). README.md is the
-user-facing guide; this file is for working on the repo.
+port names used in hyprland.lua, waybar and the login screen). README.md and
+`docs/` are the user-facing guide; this file is for working on the repo.
 
 ## Guiding principle: reproducibility
 A reinstall must get back to the known state with: install NixOS, run
@@ -65,6 +65,10 @@ A reinstall must get back to the known state with: install NixOS, run
 - `nas.nix`: on-demand NFS mounts from the NAS under `~/nas` (autofs + a sops template)
 - `bootstrap.sh`: the `#bootstrap` app
 - `templates/`: project dev shells; `ci/`: CI-only files
+- `docs/`: the user guide, one file per area (desktop, terminal, security,
+  deploying, gaming, nas, ai, hardware). README.md stays short — intro, what's
+  installed, repo layout, install, day-to-day, what to back up — and links here.
+  A change that alters behaviour the user sees belongs in the matching doc.
 
 ## Preferences
 - Terminal first: zsh + Spaceship prompt, vim (not neovim), git CLI, zoxide as cd.
