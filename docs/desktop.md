@@ -63,6 +63,22 @@ With only one screen connected, workspace 6 falls back onto it: Firefox and Disc
 still open together on their own workspace, and the top/bottom stacking is skipped —
 side by side on a landscape screen beats two short wide windows.
 
+## Firefox extensions
+
+Installed by policy from `configuration.nix`, so they come back on a reinstall
+without a trip to addons.mozilla.org:
+
+| Extension | What it does |
+|---|---|
+| uBlock Origin | Blocks ads and trackers |
+| SponsorBlock | Skips sponsor segments in YouTube videos |
+| 1Password | The browser half of the password manager (set in `security.nix`) |
+
+Firefox keeps them updated itself. They're force-installed, so about:addons won't
+let you remove them — they're part of the config, and removing one means a PR. Their
+own settings (uBlock's filter lists, which SponsorBlock categories to skip, per-site
+pausing) stay in the browser profile and aren't in this repo.
+
 ## Launcher (Walker)
 
 **Super + Space** opens Walker, which searches apps by default. Type a prefix to switch

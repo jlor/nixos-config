@@ -27,7 +27,8 @@ A reinstall gets back to this exact state with three things: install NixOS, run
   ReGreet login screen, Plymouth boot splash — all Catppuccin Mocha.
 - **Terminal:** kitty, zsh + Spaceship, vim, git/gh, fzf, ripgrep, fd, eza, bat, zoxide,
   direnv.
-- **Apps:** Firefox, 1Password, Discord, ZapZap (WhatsApp), VS Code, Nautilus.
+- **Apps:** Firefox (with uBlock Origin and SponsorBlock), 1Password, Discord,
+  ZapZap (WhatsApp), VS Code, Nautilus.
 - **Gaming:** Steam (Proton-GE, gamescope, gamemode), Lutris, MangoHud, the sim racing
   stack, WiVRn for the Quest 3.
 - **AI:** Claude Code, Ollama on CUDA.
@@ -120,6 +121,7 @@ The repo restores the whole system and every setting. These live outside it:
 | Game libraries | `~/.local/share/Steam`, Lutris prefixes | Large but re-downloadable; back up save games that don't use cloud saves. |
 | App logins | 1Password, Firefox, Discord, WhatsApp, Steam, Claude Code, `gh` | Sign in again after a reinstall. Firefox Sync covers the browser. |
 | Firefox's open tabs | `~/.mozilla/firefox/*/sessionstore-backups/` | The tabs restored at login (see [Desktop](docs/desktop.md#at-login)) come from the local profile. Sync covers bookmarks and tabs across devices, but a reinstall starts the session empty. |
+| Firefox extension settings | The browser profile under `~/.mozilla/firefox/` | The extensions themselves are installed by policy (see [Desktop](docs/desktop.md#firefox-extensions)), but what you tuned inside them — uBlock's filter lists, SponsorBlock's categories — isn't in this repo and starts at the defaults. |
 | Local AI models | `/var/lib/ollama` | Re-downloaded automatically after a reinstall. |
 | Wheel and rim settings | The Moza base's and the GT Neo's own firmware | Live in the hardware, not on the PC, so a reinstall doesn't touch them. Note down anything you tuned — nothing here can read them back out. |
 | SimHub + its ShakeIt profiles | `~/linux-simracing-utils/` | Windows software in a Wine prefix, so it can't be declarative. Reinstalling is one command; the hand-tuned haptics profiles are the part you can't get back. |
