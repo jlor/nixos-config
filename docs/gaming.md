@@ -56,6 +56,18 @@ its installer to Steam, force Proton Experimental, and launch it with
 option naming it, e.g. `SDL_JOYSTICK_WHEEL_DEVICES=0x346e/0x0004 %command%` (ids from
 `lsusb`).
 
+**Assetto Corsa EVO** needs nothing installed — Steam, Proton and the wheel are already
+set up. It's a DX12 title, so it runs through VKD3D, and if the launcher fails to appear
+set the launch option:
+
+```
+VKD3D_CONFIG=force_raw_va_cbv %command%
+```
+
+Expect some stuttering at certain track locations; that's a DX12-on-Linux limitation, not
+a configuration problem. The AMD interior/mirror glitches reported upstream are a Mesa
+issue and don't apply to the 5090.
+
 ### SimHub (haptics, dash, wind)
 
 The ForceFeel pad, the remapper bridge and the FT232 board all exist to be driven by
@@ -70,6 +82,11 @@ loader and runtime libraries, so it needs nothing from this config:
 curl -fsSL https://raw.githubusercontent.com/srounce/linux-simracing-utils/HEAD/install.sh | bash
 ```
 
+It prompts, so don't background it. `winetricks` has to be on PATH or it stops before
+doing anything — it's in `configuration.nix` for that reason. It brings its own Wine
+(`~/linux-simracing-utils/bin/wine`, 11 or newer required), which is why no `wine` package
+sits alongside it: a second, older wine on PATH is only a chance to use the wrong one.
+
 This is the one part of the rig that can't be declarative: proprietary Windows software in
 a user-owned Wine prefix. It lands in `~/linux-simracing-utils` (prefix under `pfx/`), and
 **that directory holds every ShakeIt profile you tune**, so back it up — see
@@ -77,13 +94,46 @@ a user-owned Wine prefix. It lands in `~/linux-simracing-utils` (prefix under `p
 
 Two things the installer does *not* do, both per-prefix and manual:
 
-- **Serial devices.** SimHub looks for a COM port, not a `/dev/tty*`. For each board,
-  symlink it into the prefix and add the matching registry entry:
-  ```sh
-  cd ~/linux-simracing-utils/pfx/dosdevices && ln -s /dev/ttyUSB0 com5
+- **Serial devices.** SimHub wants a COM port, not a `/dev/tty*`. Wine maps those itself
+  when the prefix boots, by device number:
+
   ```
-  then add `"COM5"="/dev/ttyUSB0"` under `HKLM\Software\Wine\Ports` in that prefix. The
-  udev rules in `simracing.nix` are what make the node openable in the first place.
+  com5 -> /dev/ttyUSB0     com7 -> /dev/ttyACM1
+  com6 -> /dev/ttyACM0     com8 -> /dev/ttyACM2
+  ```
+
+  Those numbers are handed out in enumeration order and move between boots — the
+  ForceFeel pad and the Moza base have already swapped on this machine. SimHub stores
+  profiles against COM numbers, so after a shuffle it drives the wrong board silently.
+
+  **Don't fix this by editing `dosdevices`.** Wine wipes and recreates those symlinks
+  every time a program starts in the prefix, so hand-made links are gone by the next
+  launch. The mechanism that persists is the registry key `HKLM\Software\Wine\Ports`,
+  which Wine's auto-mapping leaves alone.
+
+  Use COM numbers above Wine's own range so the two never collide, and point them at
+  `/dev/serial/by-id/`, which names each board by USB id and serial
+  (`ls -l /dev/serial/by-id/` lists what's attached):
+
+  ```sh
+  cd ~/linux-simracing-utils/bin
+  export WINEPREFIX=~/linux-simracing-utils/pfx
+  ./wine reg add 'HKLM\Software\Wine\Ports' /f /t REG_SZ \
+    /v COM10 /d /dev/serial/by-id/usb-ForceFeel_ForceFeel_Pad-if00
+  ./wine reg add 'HKLM\Software\Wine\Ports' /f /t REG_SZ \
+    /v COM11 /d /dev/serial/by-id/usb-Unknown_SimHub_Controller_Remapper_Bridge_0123456789-if00
+  ./wine reg add 'HKLM\Software\Wine\Ports' /f /t REG_SZ \
+    /v COM12 /d /dev/serial/by-id/usb-FTDI_FT232R_USB_UART_A50285BI-if00-port0
+  ./wineserver -k     # restart the prefix so it re-reads the key
+  ```
+
+  Then pick COM10–COM12 in SimHub, and ignore the `com1`–`com8` it also offers.
+
+  The Moza base is deliberately not mapped in: Boxflat talks to it over the same serial
+  port, and two programs holding it at once is a fight neither wins. Use Boxflat for the
+  base and leave SimHub to the haptics and the boards.
+
+  The udev rules in `simracing.nix` are what make these nodes openable in the first place.
 - **Raw HID.** Wine gates hidraw behind an `EnableHidraw` registry list; the installer
   ships a helper that adds a device to it.
 
