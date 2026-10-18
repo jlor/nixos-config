@@ -94,36 +94,46 @@ a user-owned Wine prefix. It lands in `~/linux-simracing-utils` (prefix under `p
 
 Two things the installer does *not* do, both per-prefix and manual:
 
-- **Serial devices.** SimHub wants a COM port, not a `/dev/tty*`. Wine creates those for
-  you when the prefix boots — but **by device number**, which is the problem:
+- **Serial devices.** SimHub wants a COM port, not a `/dev/tty*`. Wine maps those itself
+  when the prefix boots, by device number:
 
   ```
   com5 -> /dev/ttyUSB0     com7 -> /dev/ttyACM1
   com6 -> /dev/ttyACM0     com8 -> /dev/ttyACM2
   ```
 
-  Those numbers are handed out in enumeration order and move between boots. The
+  Those numbers are handed out in enumeration order and move between boots — the
   ForceFeel pad and the Moza base have already swapped on this machine. SimHub stores
-  profiles against COM numbers, so after a shuffle it drives the wrong board — silently,
-  with no error.
+  profiles against COM numbers, so after a shuffle it drives the wrong board silently.
 
-  Repoint them at `/dev/serial/by-id/`, which names each board by USB id and serial.
-  Keeping the same numbers they happen to hold today means nothing configured in SimHub
-  has to change:
+  **Don't fix this by editing `dosdevices`.** Wine wipes and recreates those symlinks
+  every time a program starts in the prefix, so hand-made links are gone by the next
+  launch. The mechanism that persists is the registry key `HKLM\Software\Wine\Ports`,
+  which Wine's auto-mapping leaves alone.
+
+  Use COM numbers above Wine's own range so the two never collide, and point them at
+  `/dev/serial/by-id/`, which names each board by USB id and serial
+  (`ls -l /dev/serial/by-id/` lists what's attached):
 
   ```sh
-  cd ~/linux-simracing-utils/pfx/dosdevices
-  ln -sfn /dev/serial/by-id/usb-FTDI_FT232R_USB_UART_A50285BI-if00-port0 com5
-  ln -sfn /dev/serial/by-id/usb-ForceFeel_ForceFeel_Pad-if00 com6
-  ln -sfn /dev/serial/by-id/usb-Gudsen_MOZA_R5_Base_4E003F000C51333130333235-if00 com7
-  ln -sfn /dev/serial/by-id/usb-Unknown_SimHub_Controller_Remapper_Bridge_0123456789-if00 com8
+  cd ~/linux-simracing-utils/bin
+  export WINEPREFIX=~/linux-simracing-utils/pfx
+  ./wine reg add 'HKLM\Software\Wine\Ports' /f /t REG_SZ \
+    /v COM10 /d /dev/serial/by-id/usb-ForceFeel_ForceFeel_Pad-if00
+  ./wine reg add 'HKLM\Software\Wine\Ports' /f /t REG_SZ \
+    /v COM11 /d /dev/serial/by-id/usb-Unknown_SimHub_Controller_Remapper_Bridge_0123456789-if00
+  ./wine reg add 'HKLM\Software\Wine\Ports' /f /t REG_SZ \
+    /v COM12 /d /dev/serial/by-id/usb-FTDI_FT232R_USB_UART_A50285BI-if00-port0
+  ./wineserver -k     # restart the prefix so it re-reads the key
   ```
 
-  `ls -l /dev/serial/by-id/` lists what's attached. Do this before tuning any profiles.
-  If a board still doesn't appear in SimHub, add the same paths under
-  `HKLM\Software\Wine\Ports` in that prefix — older Wine wants the registry entry as well
-  as the symlink. The udev rules in `simracing.nix` are what make the node openable in
-  the first place.
+  Then pick COM10–COM12 in SimHub, and ignore the `com1`–`com8` it also offers.
+
+  The Moza base is deliberately not mapped in: Boxflat talks to it over the same serial
+  port, and two programs holding it at once is a fight neither wins. Use Boxflat for the
+  base and leave SimHub to the haptics and the boards.
+
+  The udev rules in `simracing.nix` are what make these nodes openable in the first place.
 - **Raw HID.** Wine gates hidraw behind an `EnableHidraw` registry list; the installer
   ships a helper that adds a device to it.
 
