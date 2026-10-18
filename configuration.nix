@@ -206,6 +206,11 @@ in
   nixpkgs.config.allowUnfree = true;       # Nvidia, Steam, VS Code, Discord
 
   programs.firefox.enable = true;
+  # Firefox is autostarted at login (config/hypr/hyprland.lua), so it needs to come
+  # back with the previous session's windows and tabs rather than a blank start page.
+  # This sets browser.startup.page as a default, not a locked value, so the setting
+  # in Settings -> General -> Startup still works if you want to change it.
+  programs.firefox.policies.Homepage.StartPage = "previous-session";
   programs.git.enable = true;              # system-wide git (your settings: home.nix)
 
   # zsh is the login shell (configured per user in home.nix)

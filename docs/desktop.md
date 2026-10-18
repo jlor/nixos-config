@@ -18,6 +18,40 @@ Hyprland, the bar, the launcher and the keys. Everything here is deployed from
 Changing the look: edit files in `config/`, push, and comin applies it.
 Reload Hyprland with `hyprctl reload`, and Waybar with `pkill waybar; waybar &`.
 
+## At login
+
+Four apps start themselves and land in the same place every time
+(`config/hypr/hyprland.lua`, the autostart block):
+
+| App | Where |
+|---|---|
+| Firefox | Portrait screen (workspace 6), top, with the previous session's tabs |
+| Discord | Portrait screen (workspace 6), below Firefox |
+| ZapZap | Tray only — no window until you click it |
+| kitty | Main screen (workspace 1) |
+
+Each one is launched with a window rule attached to that command alone, so
+opening Firefox or Discord by hand later still puts the window wherever you are.
+The rule covers the first window a command opens (Hyprland's
+`misc:initial_workspace_tracking`), so if your last session had several Firefox
+windows, the rest come back wherever Firefox puts them.
+
+Firefox and Discord are ordered rather than just assigned a workspace, because
+dwindle picks which side of a split a new window takes from where the cursor is,
+and at login the cursor is on the main screen. So Firefox goes first, Discord
+follows once Firefox has a window, and if the pair comes out upside down they're
+swapped. Nothing about this changes how windows open the rest of the time.
+
+Restored tabs come from Firefox's own session store, set by policy
+(`Homepage.StartPage = "previous-session"` in `configuration.nix`). It's a default,
+not a locked value, so Settings → General → Startup still works. ZapZap is started
+with `--hideStart` rather than its own "Start minimized" checkbox, so the behaviour
+lives in this repo instead of in `~/.config/ZapZap/ZapZap.conf`.
+
+With only one screen connected, workspace 6 falls back onto it: Firefox and Discord
+still open together on their own workspace, and the top/bottom stacking is skipped —
+side by side on a landscape screen beats two short wide windows.
+
 ## Launcher (Walker)
 
 **Super + Space** opens Walker, which searches apps by default. Type a prefix to switch

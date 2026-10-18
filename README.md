@@ -10,7 +10,7 @@ A reinstall gets back to this exact state with three things: install NixOS, run
 
 | Guide | What's in it |
 |---|---|
-| [Desktop](docs/desktop.md) | Look & feel, Walker launcher, Hyprland keybindings, screenshots |
+| [Desktop](docs/desktop.md) | Look & feel, what starts at login, Walker launcher, Hyprland keybindings, screenshots |
 | [Terminal](docs/terminal.md) | zsh + Spaceship, fzf, vim, per-project dev shells (direnv) |
 | [Security](docs/security.md) | 1Password, YubiKey (touch-to-sudo, disk unlock), sops secrets |
 | [Deploying](docs/deploying.md) | comin GitOps, CI, Renovate update PRs |
@@ -119,6 +119,7 @@ The repo restores the whole system and every setting. These live outside it:
 | Your home folder's data | `~/` (documents, projects) | Personal files aren't config. Code lives in git remotes anyway. SSH keys live in 1Password. |
 | Game libraries | `~/.local/share/Steam`, Lutris prefixes | Large but re-downloadable; back up save games that don't use cloud saves. |
 | App logins | 1Password, Firefox, Discord, WhatsApp, Steam, Claude Code, `gh` | Sign in again after a reinstall. Firefox Sync covers the browser. |
+| Firefox's open tabs | `~/.mozilla/firefox/*/sessionstore-backups/` | The tabs restored at login (see [Desktop](docs/desktop.md#at-login)) come from the local profile. Sync covers bookmarks and tabs across devices, but a reinstall starts the session empty. |
 | Local AI models | `/var/lib/ollama` | Re-downloaded automatically after a reinstall. |
 | Wheel and rim settings | The Moza base's and the GT Neo's own firmware | Live in the hardware, not on the PC, so a reinstall doesn't touch them. Note down anything you tuned — nothing here can read them back out. |
 | SimHub + its ShakeIt profiles | `~/linux-simracing-utils/` | Windows software in a Wine prefix, so it can't be declarative. Reinstalling is one command; the hand-tuned haptics profiles are the part you can't get back. |
