@@ -34,6 +34,50 @@ end
 -----------------
 --- AUTOSTART ---
 -----------------
+-- Where the autostarted apps live. Workspace 6 is the portrait screen's default
+-- (see the workspace rules above); with only one screen connected it falls back
+-- onto that one, so the apps still come up together on their own workspace.
+local appWorkspace  = 6 -- Firefox + Discord, portrait screen
+local termWorkspace = 1 -- terminal, main screen
+
+-- Poll until a window of `class` is mapped, then call fn(). Gives up after ~30s
+-- so an app that is slow, missing or crashing on launch can't stall the rest of
+-- the sequence.
+local function whenMapped(class, fn)
+    local tries = 60
+    local function poll()
+        if #hl.get_windows({ class = class, mapped = true }) > 0 then
+            fn()
+        elseif tries > 0 then
+            tries = tries - 1
+            hl.timer(poll, { timeout = 500, type = "oneshot" })
+        end
+    end
+    hl.timer(poll, { timeout = 500, type = "oneshot" })
+end
+
+-- Put Firefox above Discord.
+--
+-- Plain window rules can't express this: dwindle picks which *side* of a split a
+-- new window takes from the cursor position (force_split is 0), and at login the
+-- cursor sits on DP-1, nowhere near the portrait screen. Discord is then as
+-- likely to open above Firefox as below it. Rather than change force_split for
+-- every window everywhere, check the result once and swap if it came out upside
+-- down.
+local function stackApps()
+    local firefox = hl.get_windows({ class = "firefox", workspace = appWorkspace })[1]
+    local discord = hl.get_windows({ class = "discord", workspace = appWorkspace })[1]
+    if not (firefox and discord) then return end
+
+    if firefox.at.y > discord.at.y then
+        hl.dispatch(hl.dsp.focus({ window = discord }))
+        hl.dispatch(hl.dsp.window.swap({ direction = "up" }))
+        -- Swapping needs the window focused, which drags focus to the portrait
+        -- screen. Put it back where the "silent" launches left it.
+        hl.dispatch(hl.dsp.focus({ workspace = termWorkspace }))
+    end
+end
+
 hl.on("hyprland.start", function()
     -- First image applies to every screen, the -o HDMI-A-1 one overrides the portrait screen.
     hl.exec_cmd("swaybg -m fill -i " .. wallpapers .. "wallpaper-landscape.jpg"
@@ -54,6 +98,31 @@ hl.on("hyprland.start", function()
     hl.exec_cmd("1password --ozone-platform=x11 --silent")
     -- Mark the left screen primary for X11 games (Battle.net, Wine).
     hl.exec_cmd("xrandr --output DP-1 --primary")
+
+    -- Apps. The second argument is a window rule applied to whatever this
+    -- command spawns, so it only places *these* windows: opening Firefox by hand
+    -- later still puts it wherever you are.
+    hl.exec_cmd(terminal, { workspace = termWorkspace .. " silent" })
+    -- --hideStart sends ZapZap straight to the tray instead of opening a window.
+    -- Passed on the command line rather than relying on its own "Start minimized"
+    -- setting, which lives in ~/.config/ZapZap/ZapZap.conf, outside this repo.
+    hl.exec_cmd("zapzap --hideStart")
+    hl.exec_cmd("firefox", { workspace = appWorkspace .. " silent" })
+
+    -- Discord only once Firefox has a window, so it splits Firefox's tile
+    -- instead of racing it for the empty workspace.
+    whenMapped("firefox", function()
+        hl.exec_cmd("discord", { workspace = appWorkspace .. " silent" })
+        -- Stacking only makes sense on the portrait screen. On a single
+        -- landscape screen dwindle splits side by side instead, and two short
+        -- wide windows are worse than the order it picks itself.
+        if hl.get_monitor("HDMI-A-1") then
+            whenMapped("discord", function()
+                -- A beat for the new tile to settle before reading its position.
+                hl.timer(stackApps, { timeout = 500, type = "oneshot" })
+            end)
+        end
+    end)
 end)
 
 -------------------
