@@ -151,6 +151,26 @@ Then launch a VR game from Steam, or from the headset via WiVRn's application li
 OpenVR (SteamVR) titles are redirected into WiVRn by xrizer, with OpenComposite as a
 fallback the dashboard can switch to per game — SteamVR itself is not installed.
 
+### Reaching the desktop from inside the headset
+
+WiVRn starts **wayvr** (formerly wlx-overlay-s) with the session: it puts this desktop's
+windows and a virtual keyboard on top of whatever is running, reachable from the
+controllers. Bring it up with the controller menu button.
+
+You need it more than it sounds. With the headset on, the monitor is out of reach, and two
+things live there:
+
+- **A game's flat-screen menu.** Some titles render their UI only to the desktop window,
+  so in the headset you get the car and the track but nothing to click.
+- **Keyboard focus.** Keystrokes go to whichever surface the compositor has focused, which
+  with a headset on means typing blind into whatever window happens to hold focus.
+
+If a game's keyboard input isn't reaching it, check which window Hyprland has focused:
+
+```sh
+hyprctl clients | grep -iE "class|title|focus"
+```
+
 Notes:
 
 - This PC is on ethernet, so the headset's hop to the router is the only wireless leg.
