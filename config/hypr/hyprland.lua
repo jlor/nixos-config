@@ -263,6 +263,20 @@ hl.window_rule({
     immediate = true,
 })
 
+-- SimHub raises a window of its own the moment it detects a running game, and
+-- a newly mapped window takes focus. Keyboard input goes to whatever the
+-- compositor has focused, so mid-session the keys quietly start going to
+-- SimHub instead of the game -- and in VR there is no way to notice: the
+-- headset shows the track while what you type lands on the desktop.
+--
+-- no_focus only stops it taking focus when it maps. Clicking it still focuses
+-- it, so SimHub stays usable; it just can't take the keyboard unasked.
+hl.window_rule({
+    name  = "simhub-no-focus-steal",
+    match = { class = "^simhubwpf\\.exe$" },
+    no_focus = true,
+})
+
 -- Don't lock or blank the screen while anything is fullscreen (games, video).
 hl.window_rule({
     name  = "no-idle-when-fullscreen",
