@@ -211,6 +211,22 @@ in
   # This sets browser.startup.page as a default, not a locked value, so the setting
   # in Settings -> General -> Startup still works if you want to change it.
   programs.firefox.policies.Homepage.StartPage = "previous-session";
+  # Extensions, installed and kept up to date by Firefox itself from the policy
+  # below rather than clicked in from addons.mozilla.org, so a reinstall gets them
+  # back. The attribute name is the add-on's ID; 1Password adds its own in
+  # security.nix. force_installed means they can't be removed from about:addons —
+  # the point is that they're part of the config — but they can still be disabled
+  # per-site from their toolbar button.
+  programs.firefox.policies.ExtensionSettings = {
+    "uBlock0@raymondhill.net" = {                 # uBlock Origin: ad and tracker blocking
+      installation_mode = "force_installed";
+      install_url = "https://addons.mozilla.org/firefox/downloads/latest/ublock-origin/latest.xpi";
+    };
+    "sponsorBlocker@ajay.app" = {                 # SponsorBlock: skip YouTube sponsor segments
+      installation_mode = "force_installed";
+      install_url = "https://addons.mozilla.org/firefox/downloads/latest/sponsorblock/latest.xpi";
+    };
+  };
   programs.git.enable = true;              # system-wide git (your settings: home.nix)
 
   # zsh is the login shell (configured per user in home.nix)
