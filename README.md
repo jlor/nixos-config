@@ -21,6 +21,8 @@ terminal. Everything, dotfiles included, is deployed from this repo by comin.
 | `secrets.nix`, `.sops.yaml`, `secrets/` | Encrypted secrets (sops + age) |
 | `security.nix` | 1Password, YubiKey (touch-to-sudo, disk unlock) |
 | `nas.nix` | On-demand NFS mounts from the NAS under `~/nas` |
+| `simracing.nix` | The sim rig: Moza R5 + pedals, GT Neo rim, haptics, dash boards |
+| `vr.nix` | Quest 3 as a PC VR headset (WiVRn) |
 | `.github/workflows/ci.yml`, `ci/` | CI: checks every push and pull request |
 | `renovate.json` | Weekly update PRs (flake inputs, GitHub Actions) |
 | `wallpapers/` | Landscape + portrait wallpapers (desktop and login screen) |
@@ -79,6 +81,9 @@ The repo restores the whole system and every setting. These live outside it:
 | Game libraries | `~/.local/share/Steam`, Lutris prefixes | Large but re-downloadable; back up save games that don't use cloud saves. |
 | App logins | 1Password, Firefox, Discord, WhatsApp, Steam, Claude Code, `gh` | Sign in again after a reinstall. Firefox Sync covers the browser. |
 | Local AI models | `/var/lib/ollama` | Re-downloaded automatically after a reinstall. |
+| Wheel and rim settings | The Moza base's and the GT Neo's own firmware | Live in the hardware, not on the PC, so a reinstall doesn't touch them. Note down anything you tuned — nothing here can read them back out. |
+| SimHub + its ShakeIt profiles | `~/linux-simracing-utils/` | Windows software in a Wine prefix, so it can't be declarative. Reinstalling is one command; the hand-tuned haptics profiles are the part you can't get back. |
+| Quest 3 headset settings | The headset | WiVRn's client keeps its own resolution/bitrate settings on the headset. |
 
 Not needed: the desktop's own age key (a reinstall makes a new one, and bootstrap
 re-encrypts the secrets for it), `hardware-configuration.nix` (regenerated), and the YubiKey
@@ -394,6 +399,98 @@ Alternative: add the Battle.net installer to Steam as a non-Steam game and force
 
 - Proton-GE is pre-installed; select it under Properties → Compatibility.
 - Launch options: `gamemoderun mangohud %command%`
+
+## Sim racing
+
+The whole rig hangs off its own USB hub, which plugs into the HIVE II (via a USB 3
+extender cable, because the hub's own lead doesn't reach the back of the PC). Nothing in
+this config cares which port anything is in — `pam_u2f` matches the YubiKey by credential,
+not by port — so the hub and the YubiKey just need two free HIVE II slots between them.
+
+| Device | How Linux sees it | Needs |
+|---|---|---|
+| Moza R5 base + SR-P Lite pedals | One USB device, `346e:0004`; the pedals plug into the base | `hid-universal-pidff`, already in the kernel |
+| Simagic GT Neo rim (MagLink) | `3670:0805`, a plain HID gamepad on its own `js*` | Nothing for games; a udev rule for SimPro Manager |
+| Realteus ForceFeel pad | CDC serial, `/dev/ttyACM*` | udev rule + SimHub |
+| SimHub Controller Remapper Bridge | Serial in, virtual gamepad out | udev rule + SimHub |
+| FT232R board (wind sim / dash) | `/dev/ttyUSB0` | udev rule + SimHub |
+
+Force feedback needs no setup. The 6.18 kernel's `hid-universal-pidff` driver has the R5
+in its device table and loads itself on plug-in. After connecting the base, check:
+
+```sh
+sudo dmesg | grep -i pidff        # should name the Moza base
+ls /dev/input/by-id/              # one *-event-joystick per device
+```
+
+`simracing.nix` grants the logged-in user access to the serial and raw-HID nodes, which
+NixOS otherwise leaves at `root:dialout 0660` and `root:root 0600`. Each device is listed
+there by vendor/product id — **add a line when you add a box to the rig**, or its
+`/dev/ttyACM*` stays unopenable.
+
+**Settings:** run `boxflat` for the Moza side (FFB strength, steering angle, pedal curves,
+LEDs). It's the Linux stand-in for Pit House and cannot flash firmware, so base firmware
+updates still need Pit House on Windows. Simagic's SimPro Manager is Windows-only too: add
+its installer to Steam, force Proton Experimental, and launch it with
+`PROTON_ENABLE_HIDRAW=1 %command%`.
+
+**If a game doesn't see a device,** it's almost always SDL's wheel detection. Add a launch
+option naming it, e.g. `SDL_JOYSTICK_WHEEL_DEVICES=0x346e/0x0004 %command%` (ids from
+`lsusb`).
+
+### SimHub (haptics, dash, wind)
+
+The ForceFeel pad, the remapper bridge and the FT232 board all exist to be driven by
+SimHub, which is Windows-only .NET. It does run here, but only under Wine — and a game's
+telemetry lives in shared memory that a Wine-hosted app can't normally see, so it needs a
+bridge. [linux-simracing-utils](https://github.com/srounce/linux-simracing-utils) installs
+SimHub (and CrewChief) into its own Wine prefix and sets up Winecarte to replicate that
+shared memory across prefixes. It detects NixOS and pins its own nixpkgs revision for the
+loader and runtime libraries, so it needs nothing from this config:
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/srounce/linux-simracing-utils/HEAD/install.sh | bash
+```
+
+This is the one part of the rig that can't be declarative: proprietary Windows software in
+a user-owned Wine prefix. It lands in `~/linux-simracing-utils` (prefix under `pfx/`), and
+**that directory holds every ShakeIt profile you tune**, so back it up — see What to back up.
+
+Two things the installer does *not* do, both per-prefix and manual:
+
+- **Serial devices.** SimHub looks for a COM port, not a `/dev/tty*`. For each board,
+  symlink it into the prefix and add the matching registry entry:
+  ```sh
+  cd ~/linux-simracing-utils/pfx/dosdevices && ln -s /dev/ttyUSB0 com5
+  ```
+  then add `"COM5"="/dev/ttyUSB0"` under `HKLM\Software\Wine\Ports` in that prefix. The
+  udev rules in `simracing.nix` are what make the node openable in the first place.
+- **Raw HID.** Wine gates hidraw behind an `EnableHidraw` registry list; the installer
+  ships a helper that adds a device to it.
+
+## VR (Quest 3)
+
+Meta's Quest Link is Windows-only, so the headset streams from this machine over the LAN
+with [WiVRn](https://wivrn.github.io/) instead. The server is already running (as your
+user, from login). One-time setup on the headset:
+
+1. Install **WiVRn** from the Meta Horizon Store (free).
+2. Put the headset on the same network as this machine — it finds `desktop` by mDNS.
+3. Open WiVRn on the headset and pair; confirm the pairing in `wivrn-dashboard` here.
+
+Then launch a VR game from Steam, or from the headset via WiVRn's application list.
+OpenVR (SteamVR) titles are redirected into WiVRn by xrizer, with OpenComposite as a
+fallback the dashboard can switch to per game — SteamVR itself is not installed.
+
+Notes:
+
+- This PC is on ethernet, so the headset's hop to the router is the only wireless leg.
+  Keep it on 5 GHz or 6 GHz; a congested 2.4 GHz band will stutter.
+- `vr.nix` pins the encoder to NVENC + AV1, which is what the 5090 encodes and the Quest 3
+  decodes best. The dashboard's encoder picker won't stick — change it in `vr.nix`.
+- `steam.importOXRRuntimes` needs a logout to take effect after a fresh deploy.
+- Le Mans Ultimate's VR is currently broken through the OpenVR translation layers (it
+  bundles its own Windows OpenComposite). Assetto Corsa, ACC and AMS2 are the safe bets.
 
 ## BIOS (ASUS X870-I)
 
