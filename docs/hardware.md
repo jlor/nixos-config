@@ -3,7 +3,9 @@
 Ryzen 7 9800X3D, RTX 5090, ASUS ROG Strix X870-I, DDR5-6000, Crucial T700 NVMe.
 Two monitors: a Samsung C32JG5x (DP-1, landscape, primary, left) and a Lenovo
 T27h-2L (HDMI-A-1, portrait, right). Those port names are what `configuration.nix`,
-`config/hypr/hyprland.lua` and `config/waybar/config.jsonc` refer to.
+`config/hypr/hyprland.lua` and `config/waybar/config.jsonc` refer to. The portrait
+screen is positioned so its bottom edge is flush with the bottom of the landscape
+one, which leaves its top sticking up above the main screen.
 
 ## BIOS (ASUS X870-I)
 

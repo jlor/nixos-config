@@ -19,7 +19,10 @@ local mainMod     = "SUPER"
 -- Left: primary, landscape, highest refresh rate.
 hl.monitor({ output = "DP-1", mode = "highrr", position = "0x0", scale = 1 })
 -- Right: portrait. transform 1 = 90°; use 3 if it comes out upside down.
-hl.monitor({ output = "HDMI-A-1", mode = "preferred", position = "auto-right", scale = 1, transform = 3 })
+-- Position is explicit rather than auto-right so the bottom edges line up: rotated
+-- it is 1440x2560, so y = 1440 (DP-1's height) - 2560 = -1120 puts its bottom at
+-- the same line as DP-1's. x = 2560 is just right of DP-1.
+hl.monitor({ output = "HDMI-A-1", mode = "preferred", position = "2560x-1120", scale = 1, transform = 3 })
 -- Anything else you plug in.
 hl.monitor({ output = "", mode = "preferred", position = "auto", scale = 1 })
 
