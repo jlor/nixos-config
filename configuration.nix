@@ -326,8 +326,10 @@ in
   nix.settings = {
     experimental-features = [ "nix-command" "flakes" ];
     auto-optimise-store = true;
-    # Prebuilt CUDA packages (Ollama). The default cache doesn't carry CUDA,
-    # so without this they compile from source for hours.
+    # Prebuilt CUDA packages (the toolkit NInfer builds against). The default
+    # cache doesn't carry CUDA, so without this it compiles from source for
+    # hours. NInfer itself has no cache and is always built locally; see
+    # docs/ai.md.
     substituters = [ "https://cache.nixos-cuda.org" ];
     trusted-public-keys = [ "cache.nixos-cuda.org:74DUi4Ye579gUqzH4ziL9IyiJBlDpMRn9MBN8oNan9M=" ];
   };
