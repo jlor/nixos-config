@@ -63,9 +63,14 @@ A reinstall must get back to the known state with: install NixOS, run
 - `home.nix`: user jlor via home-manager; links dotfiles from `config/`
 - `secrets.nix`: sops-nix; `security.nix`: 1Password, YubiKey, PAM, hyprlock
 - `nas.nix`: on-demand NFS mounts from the NAS under `~/nas` (autofs + a sops template)
-- `ai.nix`: local AI (NInfer server + background model download); `pkgs/`: packages
-  not in nixpkgs, currently just `ninfer.nix`. NInfer is built locally with no
-  binary cache and is `sm_120a`-only, so treat bumps there as expensive.
+- `ai.nix`: local AI (NInfer server + background model download + both clients);
+  `pkgs/`: packages not in nixpkgs — `ninfer.nix` (the engine) and `omp.nix` (the
+  local client). NInfer is built locally with no binary cache and is `sm_120a`-only,
+  so treat bumps there as expensive; omp is a pinned release binary, so bumps there
+  are cheap but manual. Neither is watched by Renovate.
+  Don't point Claude Code at NInfer — it implements Anthropic's platform, not just
+  the wire format, so hosted features (effort, server-side web_search, encrypted
+  thinking) 400 one at a time. `omp` is the local client for that reason.
 - `bootstrap.sh`: the `#bootstrap` app
 - `templates/`: project dev shells; `ci/`: CI-only files
 - `docs/`: the user guide, one file per area (desktop, terminal, security,

@@ -96,23 +96,31 @@ cudaPackages.backendStdenv.mkDerivation (finalAttrs: {
   '';
 
   # Qwen3.8's chat template accepts only xhigh/medium/low as a reasoning
-  # effort, but Anthropic's ladder is low/medium/high/xhigh/max — and Claude
-  # Code sends `high`, which the template rejects outright with
-  # "Unexpected reasoning effort high". So claude-local fails on every request
-  # against the stock template.
+  # effort and raises on anything else, but every client sends a different
+  # ladder. This patch folds the foreign rungs onto Qwen's:
   #
-  # Patched here rather than vendored, so a `rev` bump picks up upstream's
-  # template and only this one-line normalisation stays ours. `high` and `max`
-  # both fold to `xhigh`, which is the template's own default — so an explicit
-  # `high` behaves exactly like sending no effort at all. Genuinely unknown
-  # values still raise.
+  #   client          ladder                              mapped
+  #   Qwen3.8 native  low  medium  xhigh                   (unchanged)
+  #   Anthropic       low  medium  high  xhigh  max         high, max -> xhigh
+  #   OpenAI / OMP    minimal  low  medium  high            minimal   -> low
+  #
+  # high folds to xhigh because xhigh is the template's own default, so an
+  # explicit high behaves exactly like sending no effort at all; minimal folds
+  # to low as the bottom of each ladder. Genuinely unknown values still raise.
+  #
+  # This is load-bearing on the OpenAI path too, not just Anthropic's: omp
+  # advertises minimal/low/medium/high for this model, and `reasoning_effort:
+  # high` over /v1/chat/completions hits the same validation.
+  #
+  # Patched rather than vendored so a `rev` bump picks up upstream's template
+  # and only this normalisation stays ours.
   passthru.chatTemplate =
     runCommand "qwen3_8-effort-normalised.jinja" { } ''
       install -Dm644 ${finalAttrs.src}/tools/chat_templates/qwen3_8.jinja "$out"
       substituteInPlace "$out" \
         --replace-fail \
         "{%- set resolved_reasoning_effort = reasoning_effort|default('xhigh') %}" \
-        "{%- set resolved_reasoning_effort = reasoning_effort|default('xhigh') %}{%- if resolved_reasoning_effort in ('high', 'max') %}{%- set resolved_reasoning_effort = 'xhigh' %}{%- endif %}"
+        "{%- set resolved_reasoning_effort = reasoning_effort|default('xhigh') %}{%- if resolved_reasoning_effort in ('high', 'max') %}{%- set resolved_reasoning_effort = 'xhigh' %}{%- elif resolved_reasoning_effort == 'minimal' %}{%- set resolved_reasoning_effort = 'low' %}{%- endif %}"
     '';
 
   # The v2->v3 container upgrade ai.nix needs for the third-party artifact.

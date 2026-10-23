@@ -1,14 +1,20 @@
 # Local AI: NInfer serving an abliterated Qwen3.8-27B on the RTX 5090.
 #
 # Replaces the Ollama setup this file grew out of. The trade is deliberate:
-# NInfer is written for this exact GPU and gives a 200k context and native
-# Anthropic Messages support (so `claude-local` talks to a real backend), but
-# it serves exactly one model and is built from source on this machine. See
-# docs/ai.md.
+# NInfer is written for this exact GPU and gives a 200k context, but it serves
+# exactly one model and is built from source on this machine. See docs/ai.md.
 { pkgs, ... }:
 
 let
   ninfer = pkgs.callPackage ./pkgs/ninfer.nix { };
+
+  # The client for the local model. Claude Code can't fill this role: it
+  # implements Anthropic's *platform*, while NInfer implements only the wire
+  # format, so every hosted feature 400s — the effort vocabulary, server-side
+  # web_search, and thinking.display='omitted' all did. omp speaks
+  # openai-completions instead and runs web_search client-side, so the local
+  # model gains search rather than losing it. ~/.omp config is in home.nix.
+  omp = pkgs.callPackage ./pkgs/omp.nix { };
 
   # Qwen3.8-27B NVFP4 with the refusal directions removed (huihui-ai's
   # abliteration of the base weights, converted to a .ninfer artifact by a
@@ -23,8 +29,9 @@ let
   downloaded = "${stateDir}/qwen3_8_27b_nvfp4.v2.ninfer";
   modelPath = "${stateDir}/qwen3_8_27b_nvfp4.ninfer";
 
-  # Public HTTP name, pinned so claude-local doesn't depend on whatever name is
-  # stored inside the artifact. Purely an alias; it selects no behaviour.
+  # Public HTTP name, pinned so clients don't depend on whatever name is stored
+  # inside the artifact. Purely an alias; it selects no behaviour. Must match
+  # the model id in config/omp/models.yml.
   modelId = "qwen3.8-27b";
   port = 8080;
 in
@@ -32,7 +39,7 @@ in
   # `ninfer-serve --help`, and the one-shot `ninfer` CLI for poking at an
   # artifact. Note the CLI loads its own copy of the weights, so stop the
   # service first or the two fight over VRAM.
-  environment.systemPackages = [ ninfer ];
+  environment.systemPackages = [ ninfer omp ];
 
   users.users.ninfer = {
     isSystemUser = true;

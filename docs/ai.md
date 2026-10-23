@@ -1,34 +1,66 @@
 # AI
 
-Claude Code, plus a local model on the 5090. Configured in `ai.nix`
-(the server and the model) , `pkgs/ninfer.nix` (the engine) and `home.nix`.
+Two agents, two backends: **Claude Code against Anthropic** for real work, and
+**omp against a local model on the 5090** for offline, private or idle-curiosity
+work. Configured in `ai.nix` (the server, the model, both clients),
+`pkgs/ninfer.nix` (the engine), `pkgs/omp.nix` (the local client) and `home.nix`
+(omp's provider list).
 
-- **Claude Code:** `claude` (log in on first run).
-- **Local model:** [NInfer](https://github.com/Neroued/ninfer) serves an
-  abliterated Qwen3.8-27B NVFP4 on the 5090. It's an inference engine written
-  for this exact GPU, so it's two to three times faster than Ollama was and runs
-  a 204,800-token context instead of 64k.
-  - `claude-local` runs Claude Code against it. NInfer implements Anthropic's
-    `/v1/messages` natively — tools, streaming and token counting included — so
-    this is a real backend rather than a translation layer.
-    `CLAUDE_LOCAL_MODEL=<id> claude-local` picks another id.
-  - For a plain chat, talk to the server directly:
+- **Claude Code:** `claude` (log in on first run). Anthropic's API only — see
+  "Why not Claude Code locally" below.
+- **omp:** `omp` ([oh-my-pi](https://github.com/can1357/oh-my-pi)) for the local
+  model. `omp` for a session, `omp -p "..."` for one shot,
+  `omp --model ninfer/qwen3.8-27b` to force the local provider, `omp models ninfer`
+  to check discovery. Its `web_search` runs client-side, so the local model can
+  still search the web.
+- **The engine:** [NInfer](https://github.com/Neroued/ninfer) serves an
+  abliterated Qwen3.8-27B NVFP4. Written for this exact GPU, so it's two to three
+  times faster than Ollama was, with a 204,800-token context instead of 64k.
+  - `systemctl status ninfer` shows the server, `curl localhost:8080/health` its
+    readiness, and `GET /v1/models` the model id and effective context length.
+  - For a plain chat without a client:
     ```bash
     curl http://127.0.0.1:8080/v1/chat/completions \
       -H 'Content-Type: application/json' \
       -d '{"model":"qwen3.8-27b","messages":[{"role":"user","content":"hello"}],"max_tokens":256}'
     ```
-  - `systemctl status ninfer` shows the server, `curl localhost:8080/health` its
-    readiness, and `GET /v1/models` the model id and effective context length.
-  - Claude Code sends a reasoning effort of `high`, which Qwen3.8's chat template
-    rejects outright — its own ladder is only `xhigh`/`medium`/`low`, so every
-    `claude-local` request failed with
-    `Jinja Exception: Unexpected reasoning effort high`. `pkgs/ninfer.nix` patches
-    the template to fold `high` and `max` into `xhigh` (the template's default,
-    so an explicit `high` now behaves like sending no effort at all) and passes
-    it with `--chat-template`. Unknown values still raise.
-  - Local models are far weaker than Claude at multi-step coding; good for offline
-    use, quick questions and privacy-sensitive code.
+- Local models are far weaker than Claude at multi-step coding; good for offline
+  use, quick questions and privacy-sensitive code.
+
+## Why not Claude Code locally
+
+There used to be a `claude-local` wrapper pointing Claude Code at NInfer. It was
+removed because it could not be made to work: Claude Code implements Anthropic's
+**platform**, while NInfer implements only the **wire format**. Every hosted
+feature returns a 400, and they surface one at a time as Claude Code decides to
+use them:
+
+| Feature | Result |
+|---|---|
+| `output_config.effort: high` | Rejected by Qwen's chat template (see below) |
+| `web_search_20250305` | *"requires its predefined prompt schema or server executor, which NInfer does not provide"* |
+| `thinking.display: omitted` | *"requires encrypted hidden-reasoning restore semantics that NInfer does not provide"* |
+
+Each needs a separate workaround, and there is no reason to think the list is
+finished. omp avoids the whole class by speaking `openai-completions`.
+
+## Reasoning effort is normalised
+
+Qwen3.8's chat template accepts only `xhigh`/`medium`/`low` and **raises** on
+anything else rather than clamping. Every client sends a different ladder, so
+`pkgs/ninfer.nix` patches the template and passes it with `--chat-template`:
+
+| Client | Ladder | Mapped to |
+|---|---|---|
+| Qwen3.8 native | `low` `medium` `xhigh` | unchanged |
+| Anthropic | `low` `medium` `high` `xhigh` `max` | `high`, `max` → `xhigh` |
+| OpenAI / omp | `minimal` `low` `medium` `high` | `minimal` → `low` |
+
+`high` folds to `xhigh` because that is the template's own default, so an
+explicit `high` behaves exactly like sending no effort at all. Genuinely unknown
+values still raise. This matters on the OpenAI path too: omp advertises
+`minimal`/`low`/`medium`/`high` for this model, and `reasoning_effort` over
+`/v1/chat/completions` hits the same validation.
 
 ## The model
 
@@ -96,6 +128,27 @@ model depends on the upgrade tool continuing to accept it.
 CUDA 13.1 is pinned rather than the newest available: upstream builds its own
 container on 13.1, and `cudaPackages_13_3` is incomplete in nixos-26.05
 (`cuda_cccl` evaluates as `0-unsupported`).
+
+## omp's configuration
+
+`~/.omp/agent/models.yml` comes from `config/omp/models.yml` in this repo, so
+the provider definition is declarative. It repeats three values that `ai.nix`
+owns — the port, the model id and the context window — and nothing checks that
+they agree, so change them together. A `contextWindow` larger than the engine's
+own ceiling just means omp builds prompts the engine then refuses.
+
+`~/.omp/agent/config.yml` is deliberately **not** managed. omp rewrites it at
+runtime (`omp setup`, `/model`, `/settings`), so declaring it would either fight
+the app or drift silently from the repo. The consequence is that the chosen
+default model is machine state, not repo state: after a reinstall, run
+`omp setup` once, or use `omp --model ninfer/qwen3.8-27b` explicitly. Upstream
+ships a home-manager module that writes `config.yml` as a *writable* copy for
+this reason; this repo does not use it (see `pkgs/omp.nix` for why the flake
+isn't consumed at all).
+
+omp is packaged from its published release binary rather than built from source
+— the full build is 2,076 derivations with no binary cache. Version bumps are
+manual; the procedure is in `pkgs/omp.nix`.
 
 ## The CLI
 

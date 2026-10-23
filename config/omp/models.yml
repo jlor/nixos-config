@@ -1,0 +1,23 @@
+# omp provider for the local model NInfer serves.
+#
+# ai.nix is the source of truth for the three values repeated here: the --port
+# (8080), the --model-id (qwen3.8-27b) and the --max-context (204800). Keep
+# them in sync — nothing checks this automatically, and a contextWindow larger
+# than the engine's own ceiling means omp will happily build prompts the
+# engine then refuses.
+#
+# The OpenAI surface is deliberate. NInfer also speaks Anthropic Messages, but
+# that invites clients to expect hosted platform features it cannot provide
+# (see docs/ai.md); openai-completions has no such surface.
+providers:
+  ninfer:
+    baseUrl: http://127.0.0.1:8080/v1
+    api: openai-completions
+    # NInfer binds to 127.0.0.1 and runs with auth disabled, but omp still
+    # wants a non-empty key for an openai-completions provider.
+    apiKey: dummy
+    models:
+      - id: qwen3.8-27b
+        name: Qwen3.8-27B abliterated (local)
+        contextWindow: 204800
+        maxTokens: 32000
