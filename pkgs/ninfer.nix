@@ -95,22 +95,33 @@ cudaPackages.backendStdenv.mkDerivation (finalAttrs: {
     done
   '';
 
-  # Qwen3.8's chat template accepts only xhigh/medium/low as a reasoning
-  # effort and raises on anything else, but every client sends a different
-  # ladder. This patch folds the foreign rungs onto Qwen's:
+  # Qwen3.8's chat template accepts only xhigh/medium/low as a reasoning effort
+  # and *raises* on anything else instead of clamping. Clients send their own
+  # ladders, so this folds the foreign rungs onto Qwen's.
   #
-  #   client          ladder                              mapped
-  #   Qwen3.8 native  low  medium  xhigh                   (unchanged)
-  #   Anthropic       low  medium  high  xhigh  max         high, max -> xhigh
-  #   OpenAI / OMP    minimal  low  medium  high            minimal   -> low
+  # omp reaches the template through `chat_template_kwargs.reasoning_effort` on
+  # /v1/chat/completions (not a top-level field), which NInfer passes straight
+  # in. Captured off the wire, omp clamps to its catalog's ceiling itself:
+  #
+  #   omp --thinking=     sends            needs mapping
+  #   minimal, off        minimal          yes -> low
+  #   low                 low              no
+  #   medium              medium           no
+  #   high, xhigh, max    high             yes -> xhigh
+  #   auto (the default)  high             yes -> xhigh
+  #
+  # So both mapped rungs are hit in ordinary use: the default lands on high,
+  # and --thinking=off lands on minimal. Without this, omp fails by default.
   #
   # high folds to xhigh because xhigh is the template's own default, so an
   # explicit high behaves exactly like sending no effort at all; minimal folds
-  # to low as the bottom of each ladder. Genuinely unknown values still raise.
+  # to low as the bottom of both ladders.
   #
-  # This is load-bearing on the OpenAI path too, not just Anthropic's: omp
-  # advertises minimal/low/medium/high for this model, and `reasoning_effort:
-  # high` over /v1/chat/completions hits the same validation.
+  # `max` is latent, not observed: omp never emits it, and nothing currently
+  # points an Anthropic client at NInfer. It is kept because /v1/messages is
+  # still served, where low/medium/high/xhigh/max is the vocabulary.
+  #
+  # Genuinely unknown values still raise — the guard is widened, not removed.
   #
   # Patched rather than vendored so a `rev` bump picks up upstream's template
   # and only this normalisation stays ours.

@@ -47,20 +47,29 @@ finished. omp avoids the whole class by speaking `openai-completions`.
 ## Reasoning effort is normalised
 
 Qwen3.8's chat template accepts only `xhigh`/`medium`/`low` and **raises** on
-anything else rather than clamping. Every client sends a different ladder, so
-`pkgs/ninfer.nix` patches the template and passes it with `--chat-template`:
+anything else rather than clamping, so `pkgs/ninfer.nix` patches it and passes
+it with `--chat-template`.
 
-| Client | Ladder | Mapped to |
+omp reaches the template via `chat_template_kwargs.reasoning_effort`, which
+NInfer forwards verbatim. What it actually sends, captured off the wire — note
+it clamps `xhigh`/`max` down to `high` itself:
+
+| `omp --thinking=` | sends | mapped to |
 |---|---|---|
-| Qwen3.8 native | `low` `medium` `xhigh` | unchanged |
-| Anthropic | `low` `medium` `high` `xhigh` `max` | `high`, `max` → `xhigh` |
-| OpenAI / omp | `minimal` `low` `medium` `high` | `minimal` → `low` |
+| `minimal`, `off` | `minimal` | `low` |
+| `low` | `low` | unchanged |
+| `medium` | `medium` | unchanged |
+| `high`, `xhigh`, `max`, `auto` (default) | `high` | `xhigh` |
+
+Both mapped rungs come up in normal use — the default lands on `high`, and
+`--thinking=off` lands on `minimal` — so without the patch omp fails on every
+request out of the box.
 
 `high` folds to `xhigh` because that is the template's own default, so an
-explicit `high` behaves exactly like sending no effort at all. Genuinely unknown
-values still raise. This matters on the OpenAI path too: omp advertises
-`minimal`/`low`/`medium`/`high` for this model, and `reasoning_effort` over
-`/v1/chat/completions` hits the same validation.
+explicit `high` behaves exactly like sending no effort at all. `max` is also
+mapped but never actually emitted by omp; it's kept for the `/v1/messages`
+endpoint NInfer still serves, where the ladder is
+`low`/`medium`/`high`/`xhigh`/`max`. Genuinely unknown values still raise.
 
 ## The model
 
