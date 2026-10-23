@@ -1,10 +1,10 @@
 # omp provider for the local model NInfer serves.
 #
-# ai.nix is the source of truth for the three values repeated here: the --port
-# (8080), the --model-id (qwen3.8-27b) and the --max-context (204800). Keep
-# them in sync — nothing checks this automatically, and a contextWindow larger
-# than the engine's own ceiling means omp will happily build prompts the
-# engine then refuses.
+# ai.nix is the source of truth for the four values repeated here: the --port
+# (8080), the --model-id (qwen3.8-27b), the --max-context (204800) and whether
+# --vision is passed. Keep them in sync — nothing checks this automatically,
+# and a contextWindow larger than the engine's own ceiling means omp will
+# happily build prompts the engine then refuses.
 #
 # The OpenAI surface is deliberate. NInfer also speaks Anthropic Messages, but
 # that invites clients to expect hosted platform features it cannot provide
@@ -21,3 +21,16 @@ providers:
         name: Qwen3.8-27B abliterated (local)
         contextWindow: 204800
         maxTokens: 32000
+        # The artifact carries vision tensors, but ai.nix starts the server
+        # without --vision (it costs VRAM the 200k KV cache is using), so the
+        # endpoint rejects any image block with
+        # "400 Vision is disabled for this server".
+        #
+        # Without this line omp assumes text+image for an openai-completions
+        # provider and picks `snapcompact` out of compaction.methodOrder,
+        # which archives older history as dense PNGs — so compaction itself
+        # 400s and the session wedges. Declaring the real input set makes omp
+        # fall through to the text-based methods (handoff/shake/soft).
+        #
+        # If --vision is ever added to ExecStart, add `image` back here.
+        input: [text]

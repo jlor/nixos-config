@@ -105,6 +105,18 @@ optimized proposal head, but no DFlash2 — so `ai.nix` runs
 be chosen at startup and costs VRAM; add `--vision` to `ExecStart` for image and
 video prompts.
 
+Vision being off is a two-sided setting: `config/omp/models.yml` declares
+`input: [text]` to match. Without it omp assumes an openai-completions provider
+takes images, and its `snapcompact` compaction method — which archives older
+history as dense PNGs to save tokens — sends image blocks the server rejects
+with `400 Vision is disabled for this server`. That fails *compaction*, not just
+image prompts, so a long session stops being able to continue at all. If you add
+`--vision`, add `image` back to the `input` list in the same change; budget for
+it first, since the fixed vision allocations plus the media buffers
+(`--media-cache-mib` 1024 and `--media-live-mib` 2048 by default) land on a card
+where the 200k KV cache already leaves only ~2 GiB free, so expect to lower
+`--max-context` and `--kv-capacity` to fit.
+
 NInfer serves exactly one resident model per process, so unlike Ollama there's no
 pulling another one on a whim. Swapping means editing `ai.nix` and
 re-downloading; the official (non-abliterated) artifacts are at
