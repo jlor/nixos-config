@@ -83,8 +83,11 @@ is the part that shows up when driving an agent loop rather than chatting.
 `ninfer-model.service` downloads it in the background after the first boot and
 verifies it against the checksum published in the repo's `SHA256SUMS`. The
 download is resumable and the unit is a no-op once the model is in place, so a
-failed download just retries. `journalctl -fu ninfer-model` follows it; until it
-finishes, `ninfer.service` sits in `activating` — expected, not a hang.
+failed download just retries — after a minute at first, backing off to every ten
+minutes, and giving up into `systemctl --failed` after ten tries in six hours so
+a permanent failure stops re-downloading. `journalctl -fu ninfer-model` follows
+it; until it finishes, `ninfer.service` sits in `activating` — expected, not a
+hang.
 
 Budget roughly 40 GiB of free space while it runs: the published file is a **v2**
 container and the current engine only loads v3, so the unit upgrades it with
