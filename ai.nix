@@ -62,6 +62,10 @@ in
   # pinned NInfer commit the upgrade tool comes from.
   systemd.services.ninfer-model = {
     description = "Download and upgrade the NInfer model artifact";
+    # A permanent failure (a stale modelSha256, say) should end up in
+    # `systemctl --failed`, not retry a 20 GiB download forever.
+    startLimitIntervalSec = 6 * 3600;
+    startLimitBurst = 10;
     wantedBy = [ "multi-user.target" ];
     after = [ "network-online.target" ];
     wants = [ "network-online.target" ];
@@ -76,8 +80,13 @@ in
       # A 20 GiB download followed by a 20 GiB rewrite; systemd must not give
       # up on either.
       TimeoutStartSec = "infinity";
+      # Back off 60s → 10m over five failures: a boot-time race against
+      # network-online.target still recovers in a minute, while a network that
+      # stays down is retried every 10 minutes instead of every minute.
       Restart = "on-failure";
       RestartSec = "60s";
+      RestartSteps = 5;
+      RestartMaxDelaySec = "10m";
       ProtectSystem = "strict";
       ProtectHome = true;
       PrivateTmp = true;

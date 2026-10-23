@@ -18,9 +18,13 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
-    # GitOps: the machine pulls this repo and deploys new commits itself
+    # GitOps: the machine pulls this repo and deploys new commits itself.
+    # Pinned to a rev on purpose, like pkgs/ninfer.nix and pkgs/omp.nix: the
+    # thing that performs the deploys must not move unattended. Bumps are manual
+    # (change the rev, `nix flake update comin`); take the next release tag
+    # rather than master.
     comin = {
-      url = "github:nlewo/comin";
+      url = "github:nlewo/comin/1399adecc682e557bc3ee914d929f8e20391a148";
       inputs.nixpkgs.follows = "nixpkgs";
     };
   };
