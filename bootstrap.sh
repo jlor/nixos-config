@@ -269,8 +269,9 @@ step_rebuild() {
   git add flake.lock
   # The prebuilt-CUDA cache (configuration.nix → nix.settings) only takes effect once
   # this build is active, and Nix accepts extra caches only from root. So the build
-  # runs as root with the cache passed in; otherwise Ollama's CUDA code compiles from
-  # source for hours. "path:" because root can't read your git checkout as a git repo.
+  # runs as root with the cache passed in; otherwise the CUDA toolkit NInfer builds
+  # against compiles from source for hours (NInfer itself always builds locally).
+  # "path:" because root can't read your git checkout as a git repo.
   # Keep the cache URL and key in sync with configuration.nix.
   local rc=0
   sudo "$(abs nixos-rebuild)" switch --flake "path:$PWD#$HOST" \
@@ -393,5 +394,6 @@ main() {
   finish
 }
 
-# BOOTSTRAP_LIB=1 loads the functions without running them (used by tests).
+# BOOTSTRAP_LIB=1 loads the functions without running them (source the script to
+# debug a single step by hand).
 [ -n "${BOOTSTRAP_LIB:-}" ] || main "$@"

@@ -84,10 +84,8 @@ in
         "clipboard"
         "files"
         "symbols"
-        "unicode"
         "websearch"
         "windows"
-        "bluetooth"
         "runner"
         "menus"
         "providerlist"
@@ -336,9 +334,12 @@ in
       set cursorline
       set scrolloff=5
       set undofile undodir=~/.vim/undo//
-      call mkdir(expand('~/.vim/undo'), 'p')
     '';
   };
+
+  # undodir has to exist for `set undofile` to write anything. Declared here rather
+  # than mkdir'd from vimrc on every start, so activation owns the directory.
+  home.file.".vim/undo/.keep".text = "";
 
   ############################################################
   # Git (CLI) + GitHub CLI

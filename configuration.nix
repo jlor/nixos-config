@@ -183,7 +183,6 @@ in
   # just a package: its system helper is what applies pairings and settings.
   services.blueman.enable = true;
 
-  services.printing.enable = true;
   services.fstrim.enable = true;           # SSD trim for the T700
   zramSwap.enable = true;
 
@@ -285,10 +284,10 @@ in
     swaybg                # wallpaper (per monitor)
     hypridle              # idle -> lock
     hyprpolkitagent       # password prompts for GUI apps
-    grim slurp wl-clipboard   # screenshots + clipboard (Walker keeps the history)
-    hyprshot               # screenshot by region / window / monitor; drives grim+slurp
+    wl-clipboard          # wl-copy/wl-paste (Walker keeps the history)
+    hyprshot               # screenshot by region / window / monitor; brings its own grim+slurp
     satty                  # annotate a screenshot before sharing it
-    libnotify             # notify-send, used by the screenshot keys
+    libnotify             # notify-send, for ad-hoc use
     brightnessctl playerctl
     pavucontrol           # audio settings
     networkmanagerapplet  # wifi tray icon
@@ -297,9 +296,7 @@ in
     xrandr                # sets primary monitor for XWayland games
 
     # Utilities
-    wget
     curl
-    htop
     btop
     nvtopPackages.nvidia
     pciutils
