@@ -51,18 +51,29 @@ jobs:
       - name: Build bootstrap app (shellcheck)
         run: nix build .#bootstrap --print-build-logs
 
+  # One runner for all five templates: a matrix spent four extra Nix installs and
+  # nixpkgs fetches on five evals that take seconds each. The loop keeps the
+  # matrix's fail-fast: false semantics — every broken template is reported, not
+  # just the first.
   templates:
     name: Dev shell templates
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        template: [default, node, java, python, go]
     steps:
       - uses: actions/checkout@v7
       - uses: cachix/install-nix-action@v31
-      - name: Evaluate ${{ matrix.template }} dev shell
-        run: nix eval --raw "path:./templates/${{ matrix.template }}#devShells.x86_64-linux.default.drvPath"
+      - name: Evaluate the dev shell templates
+        run: |
+          failed=()
+          for t in default node java python go; do
+            echo "::group::$t"
+            nix eval --raw "path:./templates/$t#devShells.x86_64-linux.default.drvPath" || failed+=("$t")
+            echo
+            echo "::endgroup::"
+          done
+          if [ ${#failed[@]} -gt 0 ]; then
+            echo "::error::templates failed to evaluate: ${failed[*]}"
+            exit 1
+          fi
 
   # A lock file bump says nothing about what it actually moves. This evaluates
   # the package versions on both sides and comments the difference, so a kernel
@@ -82,7 +93,9 @@ jobs:
     steps:
       - uses: actions/checkout@v7
         with:
-          fetch-depth: 0 # both sides of the diff must be present
+          # Full history, so the diff below can resolve the base SHA. The base
+          # side of the comparison gets its own checkout further down.
+          fetch-depth: 0
 
       - name: Does this PR touch flake.lock?
         id: lock
