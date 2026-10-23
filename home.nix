@@ -452,6 +452,9 @@ in
 
     # AI
     claude-code
+    # npx, for the MCP servers in ~/.mcp.json that are published as npm packages
+    # and launched with `npx --yes <pkg>@<version>` (each pins its own version).
+    nodejs
   ];
 
   # Leave at the release you first installed.
