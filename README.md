@@ -31,7 +31,8 @@ A reinstall gets back to this exact state with three things: install NixOS, run
   ZapZap (WhatsApp), VS Code, Nautilus.
 - **Gaming:** Steam (Proton-GE, gamescope, gamemode), Lutris, MangoHud, the sim racing
   stack, WiVRn for the Quest 3.
-- **AI:** Claude Code, NInfer serving an abliterated Qwen3.8-27B on the 5090.
+- **AI:** Claude Code against Anthropic; omp against an abliterated Qwen3.8-27B
+  served locally by NInfer on the 5090.
 - **Under it:** Nvidia open driver, PipeWire, NetworkManager, Bluetooth, zram, nix-ld.
 
 ## Repo layout
@@ -53,7 +54,7 @@ A reinstall gets back to this exact state with three things: install NixOS, run
 | `secrets.nix`, `.sops.yaml`, `secrets/` | Encrypted secrets (sops + age) |
 | `security.nix` | 1Password, YubiKey (touch-to-sudo, disk unlock) |
 | `nas.nix` | On-demand NFS mounts from the NAS under `~/nas` |
-| `ai.nix`, `pkgs/ninfer.nix` | Local AI: the NInfer server, its model, and the engine itself |
+| `ai.nix`, `pkgs/` | Local AI: the NInfer server and its model, the engine (`ninfer.nix`) and the omp client (`omp.nix`) |
 | `simracing.nix` | The sim rig: Moza R5 + pedals, GT Neo rim, haptics, dash boards |
 | `vr.nix` | Quest 3 as a PC VR headset (WiVRn) |
 | `.github/workflows/ci.yml`, `ci/` | CI: checks every push and pull request |

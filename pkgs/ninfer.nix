@@ -95,24 +95,43 @@ cudaPackages.backendStdenv.mkDerivation (finalAttrs: {
     done
   '';
 
-  # Qwen3.8's chat template accepts only xhigh/medium/low as a reasoning
-  # effort, but Anthropic's ladder is low/medium/high/xhigh/max — and Claude
-  # Code sends `high`, which the template rejects outright with
-  # "Unexpected reasoning effort high". So claude-local fails on every request
-  # against the stock template.
+  # Qwen3.8's chat template accepts only xhigh/medium/low as a reasoning effort
+  # and *raises* on anything else instead of clamping. Clients send their own
+  # ladders, so this folds the foreign rungs onto Qwen's.
   #
-  # Patched here rather than vendored, so a `rev` bump picks up upstream's
-  # template and only this one-line normalisation stays ours. `high` and `max`
-  # both fold to `xhigh`, which is the template's own default — so an explicit
-  # `high` behaves exactly like sending no effort at all. Genuinely unknown
-  # values still raise.
+  # omp reaches the template through `chat_template_kwargs.reasoning_effort` on
+  # /v1/chat/completions (not a top-level field), which NInfer passes straight
+  # in. Captured off the wire, omp clamps to its catalog's ceiling itself:
+  #
+  #   omp --thinking=     sends            needs mapping
+  #   minimal, off        minimal          yes -> low
+  #   low                 low              no
+  #   medium              medium           no
+  #   high, xhigh, max    high             yes -> xhigh
+  #   auto (the default)  high             yes -> xhigh
+  #
+  # So both mapped rungs are hit in ordinary use: the default lands on high,
+  # and --thinking=off lands on minimal. Without this, omp fails by default.
+  #
+  # high folds to xhigh because xhigh is the template's own default, so an
+  # explicit high behaves exactly like sending no effort at all; minimal folds
+  # to low as the bottom of both ladders.
+  #
+  # `max` is latent, not observed: omp never emits it, and nothing currently
+  # points an Anthropic client at NInfer. It is kept because /v1/messages is
+  # still served, where low/medium/high/xhigh/max is the vocabulary.
+  #
+  # Genuinely unknown values still raise — the guard is widened, not removed.
+  #
+  # Patched rather than vendored so a `rev` bump picks up upstream's template
+  # and only this normalisation stays ours.
   passthru.chatTemplate =
     runCommand "qwen3_8-effort-normalised.jinja" { } ''
       install -Dm644 ${finalAttrs.src}/tools/chat_templates/qwen3_8.jinja "$out"
       substituteInPlace "$out" \
         --replace-fail \
         "{%- set resolved_reasoning_effort = reasoning_effort|default('xhigh') %}" \
-        "{%- set resolved_reasoning_effort = reasoning_effort|default('xhigh') %}{%- if resolved_reasoning_effort in ('high', 'max') %}{%- set resolved_reasoning_effort = 'xhigh' %}{%- endif %}"
+        "{%- set resolved_reasoning_effort = reasoning_effort|default('xhigh') %}{%- if resolved_reasoning_effort in ('high', 'max') %}{%- set resolved_reasoning_effort = 'xhigh' %}{%- elif resolved_reasoning_effort == 'minimal' %}{%- set resolved_reasoning_effort = 'low' %}{%- endif %}"
     '';
 
   # The v2->v3 container upgrade ai.nix needs for the third-party artifact.

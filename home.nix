@@ -33,6 +33,13 @@ in
   # Wallpapers at a stable path, used by hyprland.lua
   home.file.".local/share/wallpapers".source = ./wallpapers;
 
+  # omp's provider list for the local model (not under ~/.config, so not in
+  # xdg.configFile above). Read-only is fine: `omp setup` and `/model` write
+  # the chosen default to ~/.omp/agent/config.yml, which is deliberately left
+  # unmanaged — omp rewrites it at runtime, so declaring it would either fight
+  # the app or silently drift from this repo.
+  home.file.".omp/agent/models.yml".source = ./config/omp/models.yml;
+
   ############################################################
   # Look & feel: dark GTK apps, icons, cursor
   ############################################################
@@ -294,15 +301,7 @@ in
         nix flake init -t "github:jlor/nixos-config#$template" && direnv allow
       }
 
-      # Claude Code against the local NInfer server instead of Anthropic's API.
-      # NInfer implements /v1/messages itself, tools and streaming included.
-      # Usage: claude-local [args]   (CLAUDE_LOCAL_MODEL=... to pick another id)
-      claude-local() {
-        ANTHROPIC_BASE_URL=http://127.0.0.1:8080 \
-        ANTHROPIC_AUTH_TOKEN=ninfer \
-        ANTHROPIC_API_KEY="" \
-          claude --model "''${CLAUDE_LOCAL_MODEL:-qwen3.8-27b}" "$@"
-      }
+      # The local model is reached with `omp` (see docs/ai.md), not Claude Code.
     '';
   };
 
