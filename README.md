@@ -31,7 +31,7 @@ A reinstall gets back to this exact state with three things: install NixOS, run
   ZapZap (WhatsApp), VS Code, Nautilus.
 - **Gaming:** Steam (Proton-GE, gamescope, gamemode), Lutris, MangoHud, the sim racing
   stack, WiVRn for the Quest 3.
-- **AI:** Claude Code, Ollama on CUDA.
+- **AI:** Claude Code, NInfer serving an abliterated Qwen3.8-27B on the 5090.
 - **Under it:** Nvidia open driver, PipeWire, NetworkManager, Bluetooth, zram, nix-ld.
 
 ## Repo layout
@@ -53,6 +53,7 @@ A reinstall gets back to this exact state with three things: install NixOS, run
 | `secrets.nix`, `.sops.yaml`, `secrets/` | Encrypted secrets (sops + age) |
 | `security.nix` | 1Password, YubiKey (touch-to-sudo, disk unlock) |
 | `nas.nix` | On-demand NFS mounts from the NAS under `~/nas` |
+| `ai.nix`, `pkgs/ninfer.nix` | Local AI: the NInfer server, its model, and the engine itself |
 | `simracing.nix` | The sim rig: Moza R5 + pedals, GT Neo rim, haptics, dash boards |
 | `vr.nix` | Quest 3 as a PC VR headset (WiVRn) |
 | `.github/workflows/ci.yml`, `ci/` | CI: checks every push and pull request |
@@ -122,7 +123,7 @@ The repo restores the whole system and every setting. These live outside it:
 | App logins | 1Password, Firefox, Discord, WhatsApp, Steam, Claude Code, `gh` | Sign in again after a reinstall. Firefox Sync covers the browser. |
 | Firefox's open tabs | `~/.mozilla/firefox/*/sessionstore-backups/` | The tabs restored at login (see [Desktop](docs/desktop.md#at-login)) come from the local profile. Sync covers bookmarks and tabs across devices, but a reinstall starts the session empty. |
 | Firefox extension settings | The browser profile under `~/.mozilla/firefox/` | The extensions themselves are installed by policy (see [Desktop](docs/desktop.md#firefox-extensions)), but what you tuned inside them — uBlock's filter lists, SponsorBlock's categories — isn't in this repo and starts at the defaults. |
-| Local AI models | `/var/lib/ollama` | Re-downloaded automatically after a reinstall. |
+| Local AI model | `/var/lib/ninfer` | 20 GiB, re-downloaded, checksum-verified and re-upgraded automatically after a reinstall. |
 | Wheel and rim settings | The Moza base's and the GT Neo's own firmware | Live in the hardware, not on the PC, so a reinstall doesn't touch them. Note down anything you tuned — nothing here can read them back out. |
 | SimHub + its ShakeIt profiles | `~/linux-simracing-utils/` | Windows software in a Wine prefix, so it can't be declarative. Reinstalling is one command; the hand-tuned haptics profiles are the part you can't get back. |
 | Quest 3 headset settings | The headset | WiVRn's client keeps its own resolution/bitrate settings on the headset. |

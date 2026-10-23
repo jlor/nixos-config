@@ -69,6 +69,7 @@
         ./secrets.nix
         ./security.nix
         ./nas.nix
+        ./ai.nix
         ./simracing.nix
         ./vr.nix
         sops-nix.nixosModules.sops

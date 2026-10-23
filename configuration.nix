@@ -243,20 +243,7 @@ in
   # come from Nix dev shells (see home.nix / templates/).
   programs.nix-ld.enable = true;
 
-  ############################################################
-  # Local AI: Ollama on the RTX 5090 (CUDA)
-  ############################################################
-  services.ollama = {
-    enable = true;
-    package = pkgs.ollama-cuda;
-    environmentVariables = {
-      OLLAMA_CONTEXT_LENGTH = "65536";     # Claude Code needs a long context
-      OLLAMA_FLASH_ATTENTION = "1";
-      OLLAMA_KV_CACHE_TYPE = "q8_0";       # halves context memory, fits 64k in VRAM
-    };
-    # Pulled in the background after boot (~19 GB, once). Fits the 5090's 32 GB VRAM.
-    loadModels = [ "qwen3-coder:30b" ];
-  };
+  # Local AI (NInfer on the RTX 5090) lives in ai.nix.
 
   environment.systemPackages = with pkgs; [
     # Gaming
@@ -339,8 +326,10 @@ in
   nix.settings = {
     experimental-features = [ "nix-command" "flakes" ];
     auto-optimise-store = true;
-    # Prebuilt CUDA packages (Ollama). The default cache doesn't carry CUDA,
-    # so without this they compile from source for hours.
+    # Prebuilt CUDA packages (the toolkit NInfer builds against). The default
+    # cache doesn't carry CUDA, so without this it compiles from source for
+    # hours. NInfer itself has no cache and is always built locally; see
+    # docs/ai.md.
     substituters = [ "https://cache.nixos-cuda.org" ];
     trusted-public-keys = [ "cache.nixos-cuda.org:74DUi4Ye579gUqzH4ziL9IyiJBlDpMRn9MBN8oNan9M=" ];
   };
