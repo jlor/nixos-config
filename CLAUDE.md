@@ -63,6 +63,9 @@ A reinstall must get back to the known state with: install NixOS, run
 - `home.nix`: user jlor via home-manager; links dotfiles from `config/`
 - `secrets.nix`: sops-nix; `security.nix`: 1Password, YubiKey, PAM, hyprlock
 - `nas.nix`: on-demand NFS mounts from the NAS under `~/nas` (autofs + a sops template)
+- `ai.nix`: local AI (NInfer server + background model download); `pkgs/`: packages
+  not in nixpkgs, currently just `ninfer.nix`. NInfer is built locally with no
+  binary cache and is `sm_120a`-only, so treat bumps there as expensive.
 - `bootstrap.sh`: the `#bootstrap` app
 - `templates/`: project dev shells; `ci/`: CI-only files
 - `docs/`: the user guide, one file per area (desktop, terminal, security,

@@ -294,13 +294,14 @@ in
         nix flake init -t "github:jlor/nixos-config#$template" && direnv allow
       }
 
-      # Claude Code against the local model in Ollama instead of Anthropic's API.
-      # Usage: claude-local [args]   (CLAUDE_LOCAL_MODEL=... to pick another model)
+      # Claude Code against the local NInfer server instead of Anthropic's API.
+      # NInfer implements /v1/messages itself, tools and streaming included.
+      # Usage: claude-local [args]   (CLAUDE_LOCAL_MODEL=... to pick another id)
       claude-local() {
-        ANTHROPIC_BASE_URL=http://localhost:11434 \
-        ANTHROPIC_AUTH_TOKEN=ollama \
+        ANTHROPIC_BASE_URL=http://127.0.0.1:8080 \
+        ANTHROPIC_AUTH_TOKEN=ninfer \
         ANTHROPIC_API_KEY="" \
-          claude --model "''${CLAUDE_LOCAL_MODEL:-qwen3-coder:30b}" "$@"
+          claude --model "''${CLAUDE_LOCAL_MODEL:-qwen3.8-27b}" "$@"
       }
     '';
   };
