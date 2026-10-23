@@ -20,6 +20,13 @@ Claude Code, plus a local model on the 5090. Configured in `ai.nix`
     ```
   - `systemctl status ninfer` shows the server, `curl localhost:8080/health` its
     readiness, and `GET /v1/models` the model id and effective context length.
+  - Claude Code sends a reasoning effort of `high`, which Qwen3.8's chat template
+    rejects outright — its own ladder is only `xhigh`/`medium`/`low`, so every
+    `claude-local` request failed with
+    `Jinja Exception: Unexpected reasoning effort high`. `pkgs/ninfer.nix` patches
+    the template to fold `high` and `max` into `xhigh` (the template's default,
+    so an explicit `high` now behaves like sending no effort at all) and passes
+    it with `--chat-template`. Unknown values still raise.
   - Local models are far weaker than Claude at multi-step coding; good for offline
     use, quick questions and privacy-sensitive code.
 

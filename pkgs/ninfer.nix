@@ -95,6 +95,26 @@ cudaPackages.backendStdenv.mkDerivation (finalAttrs: {
     done
   '';
 
+  # Qwen3.8's chat template accepts only xhigh/medium/low as a reasoning
+  # effort, but Anthropic's ladder is low/medium/high/xhigh/max — and Claude
+  # Code sends `high`, which the template rejects outright with
+  # "Unexpected reasoning effort high". So claude-local fails on every request
+  # against the stock template.
+  #
+  # Patched here rather than vendored, so a `rev` bump picks up upstream's
+  # template and only this one-line normalisation stays ours. `high` and `max`
+  # both fold to `xhigh`, which is the template's own default — so an explicit
+  # `high` behaves exactly like sending no effort at all. Genuinely unknown
+  # values still raise.
+  passthru.chatTemplate =
+    runCommand "qwen3_8-effort-normalised.jinja" { } ''
+      install -Dm644 ${finalAttrs.src}/tools/chat_templates/qwen3_8.jinja "$out"
+      substituteInPlace "$out" \
+        --replace-fail \
+        "{%- set resolved_reasoning_effort = reasoning_effort|default('xhigh') %}" \
+        "{%- set resolved_reasoning_effort = reasoning_effort|default('xhigh') %}{%- if resolved_reasoning_effort in ('high', 'max') %}{%- set resolved_reasoning_effort = 'xhigh' %}{%- endif %}"
+    '';
+
   # The v2->v3 container upgrade ai.nix needs for the third-party artifact.
   # Kept out of the main derivation deliberately: passthru is not part of the
   # derivation hash, so adding this tool doesn't invalidate the CUDA build.
