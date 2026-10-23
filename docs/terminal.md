@@ -35,7 +35,9 @@ node --version       # available inside the folder only
   Find package names with `nix search nixpkgs <name>`.
 - Update versions: `nix flake update`, then commit `flake.lock`.
 - Other machines: `nix develop` gives the same shell without direnv.
-- Templates live in `templates/` in this repo; add your own there.
+- Templates live in `templates/` in this repo; add your own there. Each ships its own
+  `flake.lock`, so a new project starts on a known nixpkgs rather than whatever
+  `nixos-unstable` happens to be that day — `nix flake update` moves it forward.
 
 `nix-ld` stays enabled for the odd prebuilt binary (VS Code extensions, npm packages with
 native parts).
