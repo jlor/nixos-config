@@ -149,7 +149,8 @@ in
           --device-state-slots 2 \
           --spec mtp --draft-tokens 3 \
           --lm-head-draft \
-          --preserve-thinking
+          --preserve-thinking \
+          --chat-template ${ninfer.chatTemplate}
       '';
 
       User = "ninfer";
