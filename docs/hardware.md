@@ -15,3 +15,19 @@ one, which leaves its top sticking up above the main screen.
 - Plug both monitors into the RTX 5090, not the motherboard. The 9800X3D has a small
   integrated GPU; set the primary display to PCIe (or disable the iGPU) so the boot
   splash and login appear on the 5090's screens.
+
+## Onboard Wi-Fi/BT (MediaTek MT7927)
+
+The board's Wi-Fi 7 + Bluetooth 5.4 is the onboard MediaTek MT7927 combo chip
+(PCIe `14c3:7927`; the BT side is the MT6639 controller, USB `0489:e13a`). It
+needs kernel >= 7.2 (BT support merged in 7.1, Wi-Fi in 7.2), so
+`configuration.nix` pins `boot.kernelPackages` to the 7.2 series from a
+rev-pinned `nixpkgs-unstable` flake input — everything else stays on the
+stable channel. When the repo moves to 26.11 (default kernel >= 7.2), delete
+the pin and the input.
+
+Firmware: the Wi-Fi blobs come from linux-firmware (`hardware.enableRedistributableFirmware`);
+the BT blob is not in upstream linux-firmware yet and is extracted from the
+pinned ASUS vendor driver zip (`pkgs/mt7927bt-firmware.nix`, wired via
+`hardware.firmware`). If Wi-Fi/BT is missing after a kernel-related rebuild,
+check `dmesg | grep -iE 'mt79|mt6639|btmtk'` for firmware-load errors.
