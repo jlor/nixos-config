@@ -52,8 +52,19 @@
     "spacing": 10
   },
 
+  // Reads the GPU through nvtop, not nvidia-smi. ROLLBACK AT 26.11: restore the
+  // nvidia-smi one-liner in git history once configuration.nix drops the
+  // nixpkgs-unstable kernel pin and Nvidia comes from stable again.
+  //
+  // The 7.2 kernel pin makes hardware.nvidia.package build from the unstable
+  // kernel's stdenv, so Nvidia's prebuilt executables get patchelfed to glibc
+  // 2.44 while this system is 2.42 — and nvidia-smi then segfaults in ld.so on
+  // every call, which emptied this module. Only the executables break;
+  // libnvidia-ml and libcuda load fine across the mix, which is why nvtop (and
+  // NInfer) are unaffected. nvtop is the same figures from the same library,
+  // via a binary that stable built against the right libc.
   "custom/gpu": {
-    "exec": "nvidia-smi --query-gpu=utilization.gpu,temperature.gpu --format=csv,noheader,nounits | sed 's/, /%  /; s/$/°C/'",
+    "exec": "nvtop -s | jq -r '.[0] | \"\\(.gpu_util)  \\(.temp | sub(\"C$\"; \"°C\"))\"'",
     "format": "󰢮  {}",
     "interval": 5,
     "tooltip": false
