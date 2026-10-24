@@ -107,7 +107,6 @@ hl.on("hyprland.start", function()
     hl.exec_cmd("mako")
     hl.exec_cmd("hypridle")
     hl.exec_cmd("systemctl --user start hyprpolkitagent")
-    hl.exec_cmd("nm-applet --indicator")
     -- 1Password in the tray: keeps the SSH agent and browser/CLI integration available.
     -- Forced onto XWayland: 1Password's native-Wayland approval popups (e.g. "Access
     -- Requested" for SSH signing) render too small to show their Allow/Deny buttons, a

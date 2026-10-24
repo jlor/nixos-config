@@ -192,7 +192,9 @@ in
   hardware.bluetooth.enable = true;
   hardware.bluetooth.powerOnBoot = true;
   # Bluetooth manager (Waybar's Bluetooth icon opens it). Enabled as a service, not
-  # just a package: its system helper is what applies pairings and settings.
+  # just a package: its system helper is what applies pairings and settings. The
+  # applet that ships with it would duplicate Waybar's icon in the tray, so its
+  # autostart entry is suppressed in home.nix.
   services.blueman.enable = true;
 
   services.fstrim.enable = true;           # SSD trim for the T700
@@ -302,7 +304,7 @@ in
     libnotify             # notify-send, for ad-hoc use
     brightnessctl playerctl
     pavucontrol           # audio settings
-    networkmanagerapplet  # wifi tray icon
+    networkmanagerapplet  # nm-connection-editor (its tray applet is suppressed, see home.nix)
     nautilus              # file manager
     nvidia-vaapi-driver
     xrandr                # sets primary monitor for XWayland games
