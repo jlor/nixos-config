@@ -153,6 +153,17 @@ in
       # (text/draft_head), but no DFlash2 — so MTP3 is the speculative mode.
       # 204800 is the context its publisher validated on a 32 GB 5090; the
       # official artifact's 240000 does not leave room here.
+      #
+      # One lane, not two. --kv-capacity is a single shared pool — the engine
+      # logs "KV 204,800 tokens, fp8 | pages 3,200/6,400" at startup — while
+      # --max-context is per request, so two lanes oversubscribe the pool 2:1
+      # and nothing catches it at admission. Two ~150k-token agent turns that
+      # arrive together draw from the same 3,200 pages, the second write runs
+      # past its reservation ("KV write exceeds its page reservation", HTTP
+      # 500), and the engine stays wedged after: every later request 503s until
+      # a restart. Widening the pool instead would want another 7.5 GiB where
+      # only 3.4 GiB is free, so the lane count is the part that has to give.
+      # A second request now waits for the first rather than killing both.
       ExecStart = ''
         ${ninfer}/bin/ninfer-serve ${modelPath} \
           --host 127.0.0.1 \
@@ -160,7 +171,7 @@ in
           --model-id ${modelId} \
           --max-context 204800 \
           --kv-capacity 204800 \
-          --max-concurrency 2 \
+          --max-concurrency 1 \
           --kv-dtype fp8 \
           --device-state-slots 2 \
           --spec mtp --draft-tokens 3 \
