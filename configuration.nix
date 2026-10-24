@@ -176,6 +176,12 @@ in
     alsa.support32Bit = true;
     pulse.enable = true;
   };
+  # The MT7927's BT firmware is not in upstream linux-firmware yet; it only
+  # ships inside MediaTek's Windows driver, so it is extracted from the
+  # pinned vendor zip (see pkgs/mt7927bt-firmware.nix). The Wi-Fi firmware
+  # (mediatek/mt7927/WIFI_*) already comes from linux-firmware via
+  # enableRedistributableFirmware above.
+  hardware.firmware = [ (pkgs.callPackage ./pkgs/mt7927bt-firmware.nix { }) ];
 
   hardware.bluetooth.enable = true;
   hardware.bluetooth.powerOnBoot = true;
