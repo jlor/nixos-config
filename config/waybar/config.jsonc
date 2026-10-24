@@ -119,7 +119,10 @@
     "format-ethernet": "󰈀",
     "format-disconnected": "󰤭",
     "tooltip-format": "{ifname}: {ipaddr}",
-    "on-click": "nm-connection-editor"
+    // Left-click opens the AP picker (config/wifi-menu: nmcli + wofi);
+    // middle-click keeps the previous behaviour.
+    "on-click": "~/.config/wifi-menu",
+    "on-click-middle": "nm-connection-editor"
   },
 
   "custom/power": {

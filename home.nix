@@ -22,6 +22,8 @@ in
     "hypr/hyprlock.conf".source = ./config/hypr/hyprlock.conf;
     "hypr/hypridle.conf".source = ./config/hypr/hypridle.conf;
     "waybar".source = ./config/waybar;
+    "wofi".source = ./config/wofi;
+    "wifi-menu".source = ./config/wifi-menu;
     "kitty".source = ./config/kitty;
     "mako".source = ./config/mako;
     "spaceship.zsh".source = ./config/zsh/spaceship.zsh;
@@ -446,6 +448,9 @@ in
     eza
     bat
     fastfetch
+
+    # Wi-Fi AP picker for the Waybar network module (config/wifi-menu)
+    wofi
 
     # Secrets (see secrets.nix)
     sops

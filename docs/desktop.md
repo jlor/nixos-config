@@ -99,6 +99,18 @@ mode (same as Omarchy):
 The power menu (Super + Escape, or ⏻ in the bar) is a Walker menu defined in
 `config/elephant/menus/power.toml`; add your own menus next to it.
 
+## Wi-Fi
+
+Left-click the 󰤨 in the bar for a list of the networks in range, strongest
+signal first; pick one and it connects. The password is only asked for, in a
+masked second popup, when the network is secured and no connection profile
+with a stored password exists yet. The network you are on is marked `*`, and
+middle-click still opens `nm-connection-editor` for the saved connections and
+the settings the picker doesn't cover (802.1X, custom options, ...).
+
+The picker is `config/wifi-menu` (nmcli + wofi); the popup's position and the
+Catppuccin Mocha style live in `config/wofi/`.
+
 ## Hyprland keys
 
 | Keys | Action |

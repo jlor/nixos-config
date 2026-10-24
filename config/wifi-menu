@@ -1,0 +1,122 @@
+#!/usr/bin/env zsh
+# Wi-Fi AP picker for the Waybar network module.
+#
+# Left-clicking the network module lists the networks in range (via
+# NetworkManager), lets you pick one in wofi, and connects. A password is
+# only asked (second, masked wofi) when the network is secured and no
+# connection profile with a stored password exists yet. Middle-clicking the
+# module still opens nm-connection-editor, for the cases this picker does
+# not handle (802.1X, custom settings, ...).
+
+set -u
+
+# --- 1. Scan -------------------------------------------------------------
+#
+# `nmcli -t -f IN-USE,SSID,SIGNAL,SECURITY device wifi list` emits one line
+# per BSS: "IN-USE:SSID:SIGNAL:SECURITY", the first field being "*" on the
+# network we are associated with. The SSID may itself contain colons, so
+# parse from both ends, and keep only the strongest frame per SSID.
+
+typeset -a ssids sigval security
+current=""
+
+while IFS= read -r line; do
+  in_use=${line%%:*}
+  rest=${line#*:}          # SSID:SIGNAL:SECURITY
+  sec=${rest##*:}
+  mid=${rest%:*}           # SSID:SIGNAL
+  sig=${mid##*:}
+  ssid=${mid%:*}
+
+  [[ -n $ssid ]] || continue            # hidden network
+  [[ $sig == [0-9]* ]] || sig=0
+
+  found=0
+  for (( i = 1; i <= ${#ssids[@]}; i++ )); do
+    if [[ ${ssids[i]} == "$ssid" ]]; then
+      found=$i
+      (( sig > ${sigval[i]} )) && sigval[i]=$sig
+      break
+    fi
+  done
+  if (( found == 0 )); then
+    ssids+=("$ssid")
+    sigval+=("$sig")
+    security+=("$sec")
+  fi
+  [[ $in_use == "*" ]] && current=$ssid
+done < <(nmcli -t -f IN-USE,SSID,SIGNAL,SECURITY device wifi list)
+
+if (( ${#ssids[@]} == 0 )); then
+  notify-send "Wi-Fi" "No networks found"
+  exit 0
+fi
+
+# --- 2. Present -----------------------------------------------------------
+
+bars() {
+  case $1 in
+    [0-9]|1[0-9])     printf '▁' ;;
+    6[0-9]|7[0-9])    printf '▄' ;;
+    *)                printf '▅' ;;
+  esac
+}
+
+# Sort by signal, descending (the list is small: selection sort).
+typeset -a order
+for (( i = 1; i <= ${#ssids[@]}; i++ )); do order+=("$i"); done
+for (( i = 2; i <= ${#order[@]}; i++ )); do
+  key=${order[i]}
+  j=$(( i - 1 ))
+  while (( j >= 1 )) && (( ${sigval[order[j]]} < ${sigval[key]} )); do
+    order[j+1]=${order[j]}
+    (( j-- ))
+  done
+  order[j+1]=$key
+done
+
+typeset -A disp2ssid
+typeset -a displays
+for i in $order; do
+  mark=""
+  [[ ${ssids[i]} == "$current" ]] && mark="* "
+  line="${mark}${ssids[i]}  $(bars ${sigval[i]}) ${sigval[i]}%"
+  displays+=("$line")
+  disp2ssid[$line]=${ssids[i]}
+done
+
+chosen=$(printf '%s\n' "${displays[@]}" | wofi --dmenu --prompt "Wi-Fi")
+[[ -n $chosen ]] || exit 0
+ssid=${disp2ssid[$chosen]}
+idx=0
+for i in $order; do
+  [[ ${ssids[i]} == "$ssid" ]] && idx=$i
+done
+
+# --- 3. Connect ------------------------------------------------------------
+
+if [[ $ssid == "$current" ]]; then
+  notify-send "Wi-Fi" "Already connected to $ssid"
+  exit 0
+fi
+
+connect() {
+  local out
+  if out=$(nmcli device wifi connect "$ssid" "$@" 2>&1); then
+    notify-send "Wi-Fi" "Connected to $ssid"
+  else
+    notify-send -u critical "Wi-Fi" "Could not connect to $ssid: ${out}"
+  fi
+}
+
+# Saved profile (including a stored password)? Use it.
+if nmcli -g 802-11-wireless.ssid connection show 2>/dev/null | grep -Fxq -- "$ssid"; then
+  connect
+# Open network: no password.
+elif [[ -z ${security[idx]} ]]; then
+  connect
+else
+  pw=$(wofi --dmenu --password --prompt "Password for $ssid") || exit 0
+  [[ -n $pw ]] || exit 0
+  connect password "$pw"
+fi

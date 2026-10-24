@@ -1,0 +1,13 @@
+# The wofi popup for the Wi-Fi picker (config/wifi-menu).
+# top_right, aligned with the waybar's margins (8px top, 12px right).
+
+prompt = "Wi-Fi"
+location = top_right
+x = 12
+y = 64
+width = 380
+lines = 10
+dynamic_lines = true
+matching = fuzzy
+insensitive = true
+hide_scroll = true
