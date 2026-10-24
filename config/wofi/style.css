@@ -1,0 +1,36 @@
+/* wofi popup for the Wi-Fi picker (config/wifi-menu).
+   Catppuccin Mocha with a mauve accent, to match the rest of the desktop. */
+
+#window {
+  background-color: #11111b; /* crust */
+}
+
+#outer-box {
+  background-color: #11111b;
+  padding: 8px;
+}
+
+#input {
+  background-color: #313244; /* surface0 */
+  color: #cdd6f4;            /* text */
+  border-radius: 6px;
+  padding: 4px 8px;
+  margin-bottom: 4px;
+}
+
+#scroll,
+#inner-box {
+  background-color: transparent;
+}
+
+#entry {
+  background-color: transparent;
+  color: #cdd6f4;
+  border-radius: 6px;
+  padding: 2px 8px;
+}
+
+#entry:selected {
+  background-color: #cba6f7; /* mauve */
+  color: #11111b;
+}
