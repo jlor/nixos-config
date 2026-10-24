@@ -81,10 +81,15 @@ Everything that runs off the USB standby rail while the machine is off stops wor
 - No Wake-on-LAN, no USB keyboard/mouse wake, no RTC wake.
 - No USB charging on standby, and no Aura lighting in the off state.
 
-Neither narrower ErP setting is a middle ground. Shutdown is S5, so `Enabled (S5)`
-costs the HIVE II button exactly the same; and an S4-only variant (not offered on this
-board) would leave the rail up through shutdown, which is where the wedge needs to be
-broken — it would be a no-op here, since this machine doesn't hibernate.
+The board offers `Disabled` / `S4` / `S4+S5`, and `S4` is not a middle ground: it cuts
+the standby rail for hibernate only, leaving it up through a normal shutdown — which is
+exactly where the wedge has to be broken. This machine never hibernates, so `S4`
+behaves like `Disabled`: the HIVE II button keeps working, and a wedge would keep
+surviving shutdowns. Only `S4+S5` breaks the wedge, and only by paying the costs above.
+
+Quick way to tell which side of that line a setting falls on: shut down and press the
+HIVE II power button. If the PC starts, the standby rail survived the shutdown — and so
+would a wedged controller.
 
 There is no software substitute. A shutdown hook can unbind `btusb` and drop the USB
 device, but it cannot power-cycle the controller, which is what actually clears the
