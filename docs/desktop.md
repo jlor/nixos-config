@@ -111,6 +111,17 @@ the settings the picker doesn't cover (802.1X, custom options, ...).
 The picker is `config/wifi-menu` (nmcli + wofi); the popup's position and the
 Catppuccin Mocha style live in `config/wofi/`.
 
+## Bluetooth
+
+Left-click the 󰂯 in the bar to open Blueman, where you pair and connect devices;
+the icon shows how many are connected, and hovering lists them.
+
+Neither Bluetooth nor the network keeps a tray applet running — Waybar's own
+modules cover both, and the applets would only add a second, unthemed icon. The
+one thing that comes with: a pairing prompt from a device (a PIN to confirm) is
+only answered while the Blueman window is open, so start a pairing from there
+rather than from the device.
+
 ## Hyprland keys
 
 | Keys | Action |

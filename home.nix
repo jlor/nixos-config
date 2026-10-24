@@ -30,6 +30,32 @@ in
     "elephant/menus".source = ./config/elephant/menus;
     "elephant/1password.toml".source = ./config/elephant/1password.toml;
     "satty/config.toml".source = ./config/satty/config.toml;
+
+    # Waybar has its own bluetooth and network modules, so the GTK tray applets
+    # shipped by blueman and networkmanagerapplet only add a second, unthemed
+    # icon next to each. Both install an /etc/xdg/autostart entry that
+    # systemd-xdg-autostart-generator starts, and neither NixOS module has an
+    # option to leave the applet out -- so shadow each entry with a Hidden=true
+    # file of the same name here, in the directory the generator reads first.
+    #
+    # The applets doubled as agents: Bluetooth pairing prompts now only appear
+    # while blueman-manager is open (Waybar's 󰂯 opens it), and NetworkManager
+    # has no GUI secret agent. config/wifi-menu asks for the password itself and
+    # hands it to nmcli, so the Wi-Fi picker is unaffected.
+    "autostart/blueman.desktop".text = ''
+      [Desktop Entry]
+      Type=Application
+      Name=Blueman Applet
+      Exec=blueman-applet
+      Hidden=true
+    '';
+    "autostart/nm-applet.desktop".text = ''
+      [Desktop Entry]
+      Type=Application
+      Name=NetworkManager Applet
+      Exec=nm-applet
+      Hidden=true
+    '';
   };
 
   # Wallpapers at a stable path, used by hyprland.lua
