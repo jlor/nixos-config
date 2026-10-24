@@ -15,10 +15,10 @@ Alternative: add the Battle.net installer to Steam as a non-Steam game and force
 
 ## Sim racing
 
-The whole rig hangs off its own USB hub, which plugs into the HIVE II (via a USB 3
-extender cable, because the hub's own lead doesn't reach the back of the PC). Nothing in
-this config cares which port anything is in — `pam_u2f` matches the YubiKey by credential,
-not by port — so the hub and the YubiKey just need two free HIVE II slots between them.
+The whole rig hangs off its own USB hub, which plugs straight into a rear port on the
+PC (via a USB 3 extension cable, because the hub's own lead doesn't reach; the cable
+makes no difference to anything here). Nothing in this config cares which port anything
+is in — `pam_u2f` matches the YubiKey by credential, not by port.
 
 | Device | How Linux sees it | Needs |
 |---|---|---|

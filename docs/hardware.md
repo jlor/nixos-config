@@ -78,8 +78,6 @@ Everything that runs off the USB standby rail while the machine is off stops wor
 - **The ROG STRIX HIVE II (USB `0b05:1bc4`) is dead in S5**, so its power button
   cannot start the PC — its button signals the board over USB, not over the panel
   header. Use the chassis power button, which is unaffected.
-- The sim-racing hub hangs off the HIVE II (see [gaming](gaming.md)), so that whole
-  rig is unpowered while the PC is off.
 - No Wake-on-LAN, no USB keyboard/mouse wake, no RTC wake.
 - No USB charging on standby, and no Aura lighting in the off state.
 
