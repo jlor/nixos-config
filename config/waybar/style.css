@@ -91,6 +91,7 @@ window#waybar.empty #window {
 #tray,
 #custom-gpu,
 #cpu,
+#temperature,
 #memory,
 #pulseaudio,
 #bluetooth,
@@ -98,9 +99,16 @@ window#waybar.empty #window {
   padding: 0 10px;
 }
 
-#custom-gpu { color: @green; }
-#cpu        { color: @sapphire; }
-#memory     { color: @teal; }
+/* CPU load and CPU temperature are two modules but one reading, so drop the
+   padding between them: 10px either side of the pair, a 6px gap inside it.
+   That matches the two spaces custom/gpu puts between its own two figures. */
+#cpu         { padding-right: 0; }
+#temperature { padding-left: 6px; }
+
+#custom-gpu  { color: @green; }
+#cpu         { color: @sapphire; }
+#temperature { color: @sapphire; }
+#memory      { color: @teal; }
 #pulseaudio { color: @yellow; }
 #bluetooth  { color: @blue; }
 #network    { color: @mauve; }

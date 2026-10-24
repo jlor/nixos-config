@@ -9,7 +9,7 @@
 
   "modules-left": ["custom/logo", "hyprland/workspaces", "hyprland/window"],
   "modules-center": ["clock"],
-  "modules-right": ["tray", "custom/gpu", "cpu", "memory", "pulseaudio", "bluetooth", "network", "custom/power"],
+  "modules-right": ["tray", "custom/gpu", "cpu", "temperature", "memory", "pulseaudio", "bluetooth", "network", "custom/power"],
 
   "custom/logo": {
     "format": "",
@@ -73,6 +73,23 @@
   "cpu": {
     "format": "󰍛  {usage}%",
     "interval": 3
+  },
+
+  // Sits right after "cpu" to read as one group, the way custom/gpu pairs its
+  // own two figures: "󰍛  4%  69°C". style.css closes the gap between them.
+  //
+  // k10temp's temp1_input is Tctl, the figure every other tool calls the CPU
+  // temperature. On Zen 5 it carries no offset — Tctl and the Tccd1 die sensor
+  // read within ~1°C of each other here, so there is nothing to correct for.
+  // Addressed by the device's hwmon directory rather than /sys/class/hwmon/
+  // hwmon1, whose number is assigned in probe order and so is not stable
+  // across boots.
+  "temperature": {
+    "hwmon-path-abs": "/sys/devices/pci0000:00/0000:00:18.3/hwmon",
+    "input-filename": "temp1_input",
+    "format": "{temperatureC}°C",
+    "interval": 5,
+    "tooltip": false
   },
 
   "memory": {
