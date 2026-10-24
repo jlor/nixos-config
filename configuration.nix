@@ -1,4 +1,4 @@
-{ config, lib, pkgs, ... }:
+{ config, lib, pkgs, unstableNixpkgs, ... }:
 
 let
   username = "jlor";
@@ -11,10 +11,16 @@ in
   boot.loader.systemd-boot.configurationLimit = 10;
   boot.loader.efi.canTouchEfiVariables = true;
 
-  # 26.05 ships Linux 6.18 LTS by default, which covers the 9800X3D,
-  # X870 chipset and the MediaTek Wi-Fi 7 card on the Strix X870-I.
-  # Uncomment for the newest kernel (Nvidia modules can lag behind it):
-  # boot.kernelPackages = pkgs.linuxPackages_latest;
+  # 26.05's default kernel is 6.18, which predates the onboard MediaTek MT7927
+  # Wi-Fi 7 + BT 5.4 card: BT support merged in 7.1, Wi-Fi in 7.2. With no
+  # driver for the PCIe side, the chip never configures the MT6639 BT
+  # controller, so without this there is no Wi-Fi interface and no Bluetooth
+  # adapter at all. Pin the 7.2 series from the pinned nixpkgs-unstable flake
+  # input: only the kernel and its module tree (incl. the Nvidia modules
+  # below, which come from the same kernel set) move; everything else stays on
+  # 26.05. Drop this pin (and the flake input) when moving to 26.11, whose
+  # default kernel is >= 7.2.
+  boot.kernelPackages = unstableNixpkgs.linuxKernel.packages.linux_7_2;
 
   boot.kernelParams = [
     "amd_pstate=active"   # modern AMD CPU frequency driver
