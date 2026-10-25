@@ -92,9 +92,9 @@ window#waybar.empty #window {
 #custom-gpu,
 #cpu,
 #temperature,
+#memory,
 #custom-gh-nixos,
 #custom-gh-homeops,
-#memory,
 #pulseaudio,
 #bluetooth,
 #network {
