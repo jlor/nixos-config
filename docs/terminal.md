@@ -41,3 +41,24 @@ node --version       # available inside the folder only
 
 `nix-ld` stays enabled for the odd prebuilt binary (VS Code extensions, npm packages with
 native parts).
+
+### mise, for template-generated projects
+
+`mise` is installed as the one deliberate exception to the rule above. A few projects
+are generated from an upstream template that pins its own toolchain in a committed
+`.mise/config.toml` and drives its task runner and environment variables from it.
+Re-pinning those tools in a flake here would create a second source of truth that
+drifts from what the upstream recipes expect, so Nix provides mise and mise provides
+those projects' tools.
+
+Shell integration is **off**, so mise does nothing until you ask it to:
+
+```sh
+cd <project>
+mise install            # first run, or after a .mise/config.toml change
+mise exec -- <tool> ...
+```
+
+Calling a tool directly is meant to fail — nothing is added to `PATH`, so mise can't
+shadow a nixpkgs binary or race direnv's hook. Projects without their own mise config
+should use a dev shell instead.

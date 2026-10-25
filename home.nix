@@ -234,11 +234,11 @@ in
       ############################################################
       # These widgets treat alphanumerics plus every character in $WORDCHARS as
       # part of a word. zsh's default $WORDCHARS contains "/", so at the end of
-      #   scp dev:/opt/k8s-migration/README.md
+      #   scp host:/srv/backups/README.md
       # Ctrl+W swallows the whole path back to the ":" — the first character
       # that happens not to be in the list. Dropping "/" makes a path separator
       # end a word, so Ctrl+W deletes one segment at a time (README.md, then
-      # /k8s-migration, then /opt). Derived from the default rather than spelled
+      # /backups, then /srv). Derived from the default rather than spelled
       # out, so the rest of the list stays whatever zsh ships.
       WORDCHARS=''${WORDCHARS//\/}
 
@@ -424,6 +424,21 @@ in
       hide_env_diff = true; # no wall of exported variables on cd
       warn_timeout = "30s";
     };
+  };
+
+  # The one exception to "dev shells, not version managers". Some projects are
+  # generated from an upstream template that pins its own toolchain in a committed
+  # mise config and drives its task runner and environment from it. Re-pinning those
+  # tools in a flake here would be a second source of truth that drifts from the
+  # versions the upstream recipes expect, so Nix supplies mise and mise supplies
+  # nothing but those projects' own tools.
+  #
+  # Shell integration is off deliberately: mise stays inert until called as
+  # `mise exec -- <tool>`, so it never puts anything on PATH, can't shadow a nixpkgs
+  # binary, and has no chpwd hook racing direnv.
+  programs.mise = {
+    enable = true;
+    enableZshIntegration = false;
   };
 
   ############################################################
