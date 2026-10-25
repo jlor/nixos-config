@@ -8,7 +8,7 @@
   "spacing": 6,
 
   "modules-left": ["custom/logo", "hyprland/workspaces", "hyprland/window"],
-  "modules-center": ["clock"],
+  "modules-center": ["custom/gh-nixos", "custom/gh-homeops", "clock"],
   "modules-right": ["tray", "custom/gpu", "cpu", "temperature", "memory", "pulseaudio", "bluetooth", "network", "custom/power"],
 
   "custom/logo": {
@@ -29,6 +29,26 @@
   "hyprland/window": {
     "max-length": 48,
     "separate-outputs": true
+  },
+
+  // Open PR counts for the two GitHub repos (config/waybar/gh-prs.sh).
+  // λ = jlor/nixos-config, ⎈ = x00-sh/home-ops; a dash means GitHub couldn't
+  // be reached. Left-clicking either opens that repo's open PRs in a wofi
+  // list; picking one opens it in Firefox.
+  "custom/gh-nixos": {
+    "exec": "~/.config/waybar/gh-prs.sh nixos",
+    "format": "{}",
+    "interval": 300,
+    "tooltip": false,
+    "on-click": "~/.config/waybar/gh-prs.sh nixos --list"
+  },
+
+  "custom/gh-homeops": {
+    "exec": "~/.config/waybar/gh-prs.sh homeops",
+    "format": "{}",
+    "interval": 300,
+    "tooltip": false,
+    "on-click": "~/.config/waybar/gh-prs.sh homeops --list"
   },
 
   "clock": {

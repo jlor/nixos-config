@@ -81,11 +81,19 @@ window#waybar.empty #window {
   padding: 0;
 }
 
+#custom-gh-nixos {
+  padding: 0 6px 0 16px;
+}
+
+#custom-gh-homeops {
+  padding: 0 6px;
+}
+
 #clock {
   color: @mauve;
   font-size: 14px;
   font-weight: 800;
-  padding: 0 16px;
+  padding: 0 16px 0 6px;
 }
 
 #tray,
