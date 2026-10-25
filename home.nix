@@ -501,7 +501,7 @@ in
     bat
     fastfetch
 
-    # Wi-Fi AP picker for the Waybar network module (config/wifi-menu)
+    # Waybar pickers: Wi-Fi (config/wifi-menu), open PRs (config/waybar/gh-prs.sh)
     wofi
 
     # Secrets (see secrets.nix)

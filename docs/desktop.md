@@ -18,6 +18,17 @@ Hyprland, the bar, the launcher and the keys. Everything here is deployed from
 Changing the look: edit files in `config/`, push, and comin applies it.
 Reload Hyprland with `hyprctl reload`, and Waybar with `pkill waybar; waybar &`.
 
+## Status bar
+
+Waybar runs at the top of both screens; its modules live in
+`config/waybar/`. The center of the bar tracks open PRs: λ is nixos-config,
+⎈ is [x00-sh/home-ops](https://github.com/x00-sh/home-ops), refreshed every
+5 minutes through `gh` (the same login bootstrap sets up). Left-click an
+icon for that repo's open PRs in a wofi list — Enter opens the PR in
+Firefox, Esc closes. A dash in the bar (or a toast on click) means GitHub
+wasn't reachable, usually just no network. The clock shows the time;
+middle-click it for the full date.
+
 ## At login
 
 Four apps start themselves and land in the same place every time
