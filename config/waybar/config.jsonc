@@ -9,7 +9,7 @@
 
   "modules-left": ["custom/logo", "hyprland/workspaces", "hyprland/window"],
   "modules-center": ["clock"],
-  "modules-right": ["tray", "custom/gpu", "cpu", "temperature", "custom/gh-nixos", "custom/gh-homeops", "memory", "pulseaudio", "bluetooth", "network", "custom/power"],
+  "modules-right": ["tray", "custom/gpu", "cpu", "temperature", "memory", "custom/gh-nixos", "custom/gh-homeops", "pulseaudio", "bluetooth", "network", "custom/power"],
 
   "custom/logo": {
     "format": "",
@@ -92,6 +92,11 @@
     "tooltip": false
   },
 
+  "memory": {
+    "format": "󰘚  {percentage}%",
+    "interval": 5
+  },
+
   // Open PR counts for the two GitHub repos (config/waybar/gh-prs.sh).
   // λ = jlor/nixos-config, ⎈ = x00-sh/home-ops; a dash means GitHub couldn't
   // be reached. Left-clicking either opens that repo's open PRs in a wofi
@@ -110,11 +115,6 @@
     "interval": 300,
     "tooltip": false,
     "on-click": "~/.config/waybar/gh-prs.sh homeops --list"
-  },
-
-  "memory": {
-    "format": "󰘚  {percentage}%",
-    "interval": 5
   },
 
   "pulseaudio": {
