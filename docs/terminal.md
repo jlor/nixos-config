@@ -62,3 +62,13 @@ mise exec -- <tool> ...
 Calling a tool directly is meant to fail — nothing is added to `PATH`, so mise can't
 shadow a nixpkgs binary or race direnv's hook. Projects without their own mise config
 should use a dev shell instead.
+
+Two global settings are set for it in `home.nix`, both needed on NixOS specifically:
+`node.compile = false`, because mise otherwise builds node from source and that needs a
+`python` this system doesn't have (prebuilt node runs fine under nix-ld); and
+`experimental = true`, which is what lets a project's own `[hooks]` run — without it
+mise skips them with a warning and a fresh clone quietly has no pre-commit formatting.
+
+One manual step per working copy remains: mise refuses a config it hasn't been told to
+trust, and that trust is keyed on the absolute path, so it does not survive moving a
+checkout. Run `mise trust` once in the project, then `mise install`.

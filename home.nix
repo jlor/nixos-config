@@ -439,6 +439,17 @@ in
   programs.mise = {
     enable = true;
     enableZshIntegration = false;
+    globalConfig.settings = {
+      # mise's default on this version is to build node from source, which needs
+      # `python` on PATH — not installed here, so the build dies at ./configure
+      # with exit 127. The prebuilt tarballs run fine under nix-ld, so take those.
+      node.compile = false;
+      # A project's own `[hooks]` (e.g. a postinstall that installs git hooks) is
+      # behind this flag. Without it mise warns and skips them, which is the kind
+      # of failure that looks like nothing happened — a fresh clone silently ends
+      # up with no pre-commit formatting.
+      experimental = true;
+    };
   };
 
   ############################################################
