@@ -201,6 +201,20 @@ in
   zramSwap.enable = true;
 
   ############################################################
+  # RGB lighting (OpenRGB)
+  ############################################################
+  # Controls the board's Aura lighting (and whatever else gets detected) without
+  # ASUS' Windows-only Armoury Crate. The module installs OpenRGB's udev rules,
+  # loads i2c-dev, and runs the SDK server that the GUI talks to. Its
+  # `motherboard` option follows hardware.cpu.amd.updateMicrocode above, so it
+  # resolves to "amd" and also loads i2c-piix4 — the SMBus driver the X870-I's
+  # Aura controller sits behind.
+  #
+  # Profiles are not declarative yet: the GUI writes them to ~/.config/OpenRGB.
+  # See docs/hardware.md for how to make one stick across a reinstall.
+  services.hardware.openrgb.enable = true;
+
+  ############################################################
   # Gaming
   ############################################################
   programs.steam = {
