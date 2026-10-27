@@ -12,7 +12,7 @@
     # must not move unattended — bump manually (`nix flake update nixpkgs-unstable`).
     # Drop this input when moving to 26.11, whose default kernel is >= 7.2.
     nixpkgs-unstable = {
-      url = "github:NixOS/nixpkgs/02c087f3fe673c9e317f206a627cb6b910336dbe";
+      url = "github:NixOS/nixpkgs/31ecbaca1bdefa45dffc409f0250bd8039ea0010";
     };
 
     # Manages dotfiles (Hyprland, Waybar, kitty, ...) from this repo
@@ -33,7 +33,7 @@
     # (change the rev, `nix flake update comin`); take the next release tag
     # rather than master.
     comin = {
-      url = "github:nlewo/comin/1399adecc682e557bc3ee914d929f8e20391a148";
+      url = "github:nlewo/comin/f95451172287f3cb36249a2cdef56efa9bbeef19";
       inputs.nixpkgs.follows = "nixpkgs";
     };
   };
