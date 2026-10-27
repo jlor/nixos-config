@@ -33,7 +33,8 @@ A reinstall gets back to this exact state with three things: install NixOS, run
   stack, WiVRn for the Quest 3.
 - **AI:** Claude Code against Anthropic; omp against an abliterated Qwen3.8-27B
   served locally by NInfer on the 5090.
-- **Under it:** Nvidia open driver, PipeWire, NetworkManager, Bluetooth, zram, nix-ld.
+- **Under it:** Nvidia open driver, PipeWire, NetworkManager, Bluetooth, zram, nix-ld,
+  OpenRGB for the Aura lighting.
 
 ## Repo layout
 

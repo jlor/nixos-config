@@ -20,6 +20,42 @@ one, which leaves its top sticking up above the main screen.
   clearing a wedged Bluetooth controller but kills the HIVE II power button — see
   "When the BT function wedges" below.
 
+## RGB lighting (OpenRGB)
+
+`services.hardware.openrgb.enable` in `configuration.nix` replaces ASUS' Windows-only
+Armoury Crate. It installs OpenRGB's udev rules (so the GUI reaches USB controllers
+without root), loads `i2c-dev` and `i2c-piix4` — the SMBus driver the X870-I's Aura
+controller sits behind — and runs the SDK server on port 6742 as a systemd unit.
+Launch the GUI from Walker ("OpenRGB"), or set colours from the CLI:
+
+```sh
+openrgb --list-devices                                  # what was actually detected
+openrgb --device 0 --mode direct --color cba6f7         # mauve, to match the theme
+```
+
+What gets detected is hardware-specific. The board's Aura controller should show up;
+a graphics card only does if OpenRGB knows that exact board's controller, and the
+version here predates much of the 50-series work. `--list-devices` is the answer.
+
+Nothing here lights up while the machine is off, and if Aura goes dark in standby
+check ErP below rather than OpenRGB.
+
+### Profiles are state outside the repo
+
+The GUI saves profiles as binary `.orp` files under `~/.config/OpenRGB` (the service
+reads them from `/var/lib/OpenRGB`), so a profile clicked together in the GUI does
+**not** survive a reinstall. Two ways to fix that, neither wired up yet:
+
+- Set the colours from a one-shot `openrgb --device ... --color ...` call in Nix. Fully
+  declarative, but limited to what the CLI can express.
+- Save the profile in the GUI, commit the `.orp` under `config/openrgb/`, link it into
+  the state directory with `systemd.tmpfiles.rules`, and point
+  `services.hardware.openrgb.startupProfile` at it. Handles any lighting mode, at the
+  cost of an opaque binary in git.
+
+Until one of those is in place, a saved profile belongs in the README's "What to back
+up" list — or just expect to rebuild it after a reinstall.
+
 ## Onboard Wi-Fi/BT (MediaTek MT7927)
 
 The board's Wi-Fi 7 + Bluetooth 5.4 is the onboard MediaTek MT7927 combo chip
