@@ -71,6 +71,11 @@ event to reapply on. Solaar's answer is to listen for HID++ device-connection
 notifications and reapply its saved settings when the headset wakes — which is why it
 runs as a session service instead of being invoked once at boot.
 
+You can watch it work: power the headset on and the lights come up for a moment
+before going out again. That is the firmware's own lighting, followed by Solaar's
+reapply landing. The flash is the mechanism, not a fault — if the lights ever come up
+and *stay* up, check that `solaar.service` is running in the user session.
+
 ### The motherboard and GPU are left alone
 
 OpenRGB was enabled here briefly as a way to reach the headset, then removed once
