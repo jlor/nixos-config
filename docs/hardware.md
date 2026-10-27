@@ -20,40 +20,16 @@ one, which leaves its top sticking up above the main screen.
   clearing a wedged Bluetooth controller but kills the HIVE II power button — see
   "When the BT function wedges" below.
 
-## RGB lighting (OpenRGB)
+## Headset lighting (Solaar)
 
-`services.hardware.openrgb.enable` in `configuration.nix` replaces ASUS' Windows-only
-Armoury Crate. It installs OpenRGB's udev rules (so the GUI reaches USB controllers
-without root), loads `i2c-dev` and `i2c-piix4` — the SMBus driver the X870-I's Aura
-controller sits behind — and runs the SDK server on port 6742 as a systemd unit.
-Launch the GUI from Walker ("OpenRGB"), or set colours from the CLI:
+The G733's RGB is the only lighting managed from here, and only to keep it switched
+off: the lights cost battery, and the headset is on your head where you cannot see
+them anyway. `hardware.logitech.wireless` in `configuration.nix` installs Solaar and
+the udev rules it needs — `logitech-udev-rules` tags every `046d` hidraw with
+`uaccess`, without which the receiver's node is root-only and Solaar shows no LED
+controls at all — and a user service in `home.nix` keeps it running.
 
-```sh
-openrgb --list-devices                                  # what was actually detected
-openrgb --device 0 --mode direct --color cba6f7         # mauve, to match the theme
-```
-
-What gets detected is hardware-specific. The board's Aura controller should show up;
-a graphics card only does if OpenRGB knows that exact board's controller, and the
-version here predates much of the 50-series work. `--list-devices` is the answer.
-
-Nothing here lights up while the machine is off, and if Aura goes dark in standby
-check ErP below rather than OpenRGB.
-
-### The G733 headset is Solaar's job, not OpenRGB's
-
-OpenRGB can set the headset's LEDs, but it cannot keep them set. The G733 stores
-nothing: it forgets the setting on every power cycle, and it powers itself off after
-30 idle minutes. The Lightspeed receiver stays enumerated the whole time, so there is
-no `ACTION=="add"` event to reapply on either — which is why every OpenRGB and
-HeadsetControl thread on this ends at "write a polling daemon".
-
-Solaar is the right tool: it watches HID++ device-connection notifications and
-reapplies its saved settings when the headset wakes. `hardware.logitech.wireless`
-in `configuration.nix` installs it with the udev rules it needs, and a user service
-in `home.nix` keeps it running.
-
-To turn the lighting off (once; Solaar then remembers it per device serial):
+Turning the lights off is a one-time step; Solaar then remembers it per device serial:
 
 ```sh
 solaar config "G733 Gaming Headset"                       # list settings + current values
@@ -65,30 +41,38 @@ solaar config "G733 Gaming Headset" led_zone_65282 '{ID: 0}'
 The headset has to be powered **on** when you run these: the LED features live on the
 headset, not the receiver, so with it off Solaar cannot even see them. `led_control`
 has to go first — the zone settings do nothing while the firmware still owns the LEDs.
-`65281`/`65282` are zones `0xFF01`/`0xFF02` (the logo and the primary ring, OpenRGB's
-"Logo Zone" and "Primary Zone"), and effect `ID: 0` is `Disabled`. Other effect IDs,
-if you ever want them: `1` Static, `2` Pulse, `3` Cycle, `4` Wave, `0x0A` Breathe —
-Static and Breathe take a `color`, e.g. `'{ID: 1, color: 0xcba6f7}'`.
+`65281`/`65282` are zones `0xFF01`/`0xFF02` (the logo and the primary ring), and
+effect `ID: 0` is `Disabled`. Other effect IDs, if you ever want them: `1` Static,
+`2` Pulse, `3` Cycle, `4` Wave, `0x0A` Breathe — Static and Breathe take a `color`,
+e.g. `'{ID: 1, color: 0xcba6f7}'`.
 
-These are saved to `~/.config/solaar/config.yaml`, keyed by device serial — state
-outside the repo, but re-derivable: the four commands above are the recovery
-procedure, so there is nothing here worth backing up.
+These land in `~/.config/solaar/config.yaml`, keyed by device serial — state outside
+the repo, but re-derivable: the commands above *are* the recovery procedure, so there
+is nothing here worth backing up.
 
-### Profiles are state outside the repo
+### Why the daemon has to keep running
 
-The GUI saves profiles as binary `.orp` files under `~/.config/OpenRGB` (the service
-reads them from `/var/lib/OpenRGB`), so a profile clicked together in the GUI does
-**not** survive a reinstall. Two ways to fix that, neither wired up yet:
+The headset stores nothing. It forgets any LED setting when it powers off, and it
+powers itself off after 30 idle minutes (`adc_power_management = 30`). Meanwhile the
+Lightspeed receiver stays enumerated throughout, so there is no `ACTION=="add"` udev
+event to reapply on. Solaar's answer is to listen for HID++ device-connection
+notifications and reapply its saved settings when the headset wakes — which is why it
+runs as a session service instead of being invoked once at boot.
 
-- Set the colours from a one-shot `openrgb --device ... --color ...` call in Nix. Fully
-  declarative, but limited to what the CLI can express.
-- Save the profile in the GUI, commit the `.orp` under `config/openrgb/`, link it into
-  the state directory with `systemd.tmpfiles.rules`, and point
-  `services.hardware.openrgb.startupProfile` at it. Handles any lighting mode, at the
-  cost of an opaque binary in git.
+### The motherboard and GPU are left alone
 
-Until one of those is in place, a saved profile belongs in the README's "What to back
-up" list — or just expect to rebuild it after a reinstall.
+OpenRGB was enabled here briefly as a way to reach the headset, then removed once
+Solaar turned out to be the tool for that. It did work: it found the X870-I's Aura
+controller over `i2c-piix4`, the 5090's ENE controller on the Nvidia i2c adapter, and
+the headset over HID. But it could not *keep* the headset dark, and nothing else on
+this machine needs it — the board shows no visible lighting, and the card's own
+default is fine.
+
+If that changes, `services.hardware.openrgb.enable = true` is the entire setup: the
+module loads the right SMBus driver by following `hardware.cpu.amd.updateMicrocode`.
+Its profiles are binary `.orp` files under `~/.config/OpenRGB` though, i.e. state
+outside the repo, so prefer a one-shot `openrgb --device ... --color ...` call from
+Nix over a profile clicked together in the GUI.
 
 ## Onboard Wi-Fi/BT (MediaTek MT7927)
 
