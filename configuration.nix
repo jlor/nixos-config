@@ -201,18 +201,29 @@ in
   zramSwap.enable = true;
 
   ############################################################
-  # RGB lighting (OpenRGB)
+  # Headset lighting (Solaar)
   ############################################################
-  # Controls the board's Aura lighting (and whatever else gets detected) without
-  # ASUS' Windows-only Armoury Crate. The module installs OpenRGB's udev rules,
-  # loads i2c-dev, and runs the SDK server that the GUI talks to. Its
-  # `motherboard` option follows hardware.cpu.amd.updateMicrocode above, so it
-  # resolves to "amd" and also loads i2c-piix4 — the SMBus driver the X870-I's
-  # Aura controller sits behind.
+  # Keeps the G733's LEDs switched off, which saves battery on a device whose
+  # lighting you cannot see while wearing it. The headset forgets any LED setting
+  # when it powers off — and it powers itself off after 30 idle minutes
+  # (adc_power_management) — while the Lightspeed receiver stays enumerated
+  # throughout, so there is no udev event to reapply anything on. Solaar listens
+  # for HID++ device-connection notifications instead, and reapplies its saved LED
+  # settings each time the headset wakes.
   #
-  # Profiles are not declarative yet: the GUI writes them to ~/.config/OpenRGB.
-  # See docs/hardware.md for how to make one stick across a reinstall.
-  services.hardware.openrgb.enable = true;
+  # Nothing else here needs RGB control: the board shows no visible lighting and
+  # the 5090's default is fine. OpenRGB was enabled for the headset and dropped
+  # again when it turned out it could set the LEDs but not keep them set; see
+  # docs/hardware.md if it is ever wanted back.
+  #
+  # enable      -> logitech-udev-rules. Without it the receiver's /dev/hidraw* is
+  #                root-only, and Solaar just shows no LED controls at all.
+  # enableGraphical -> the solaar package (the module also pulls in ltunify).
+  # The daemon doing the reapplying is a user service, in home.nix.
+  hardware.logitech.wireless = {
+    enable = true;
+    enableGraphical = true;
+  };
 
   ############################################################
   # Gaming

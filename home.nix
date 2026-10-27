@@ -160,6 +160,27 @@ in
     PartOf = [ "graphical-session.target" ];
   };
 
+  # Solaar, started with its window hidden. Its job here is to be running when the
+  # G733 headset reconnects, so it can reapply the saved "LEDs disabled" setting the
+  # headset forgets every time it powers down (see configuration.nix). It leaves a
+  # tray icon in Waybar, which is also where the headset's battery level shows up.
+  #
+  # No upstream module for this one, so the ordering above has to be spelled out
+  # here too, and for the same reason: Solaar is a GTK app and needs Hyprland to
+  # have imported WAYLAND_DISPLAY into the user manager before it starts.
+  systemd.user.services.solaar = {
+    Unit = {
+      Description = "Solaar, keeping Logitech device settings applied";
+      After = [ "graphical-session.target" ];
+      PartOf = [ "graphical-session.target" ];
+    };
+    Service = {
+      ExecStart = "${pkgs.solaar}/bin/solaar --window=hide";
+      Restart = "on-failure";
+    };
+    Install.WantedBy = [ "graphical-session.target" ];
+  };
+
   ############################################################
   # Shell: zsh + Spaceship prompt + zoxide as `cd`
   ############################################################
