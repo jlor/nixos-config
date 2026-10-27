@@ -34,9 +34,15 @@ Turning the lights off is a one-time step; Solaar then remembers it per device s
 ```sh
 solaar config "G733 Gaming Headset"                       # list settings + current values
 solaar config "G733 Gaming Headset" led_control true      # hand the zones to Solaar
-solaar config "G733 Gaming Headset" led_zone_65281 '{ID: 0}'
-solaar config "G733 Gaming Headset" led_zone_65282 '{ID: 0}'
+solaar config "G733 Gaming Headset" led_zone_65281 '!LEDEffectSetting {ID: 0}'
+solaar config "G733 Gaming Headset" led_zone_65282 '!LEDEffectSetting {ID: 0}'
 ```
+
+The `!LEDEffectSetting` tag is required, not decoration. Zone values are parsed with
+`yaml.safe_load`, and Solaar registers a SafeLoader constructor for that tag; without
+it the value stays a plain dict and the write dies in the validator with
+`AttributeError: 'dict' object has no attribute 'to_bytes'`. The tag is also how
+`solaar config <device>` prints these back, so copy the printed form.
 
 The headset has to be powered **on** when you run these: the LED features live on the
 headset, not the receiver, so with it off Solaar cannot even see them. `led_control`
@@ -44,7 +50,13 @@ has to go first — the zone settings do nothing while the firmware still owns t
 `65281`/`65282` are zones `0xFF01`/`0xFF02` (the logo and the primary ring), and
 effect `ID: 0` is `Disabled`. Other effect IDs, if you ever want them: `1` Static,
 `2` Pulse, `3` Cycle, `4` Wave, `0x0A` Breathe — Static and Breathe take a `color`,
-e.g. `'{ID: 1, color: 0xcba6f7}'`.
+e.g. `'!LEDEffectSetting {ID: 1, color: 0xcba6f7}'`.
+
+Do not trust the read-back. With the lights genuinely out, `solaar config
+"G733 Gaming Headset"` still reports `led_control = False` and zone `65281` as
+`{ID: 1, color: 0x000000, ramp: 0}` — Static black rather than `Disabled`. The
+authority on what will be reapplied is `~/.config/solaar/config.yaml`; the authority
+on what the headset is doing is the headset.
 
 These land in `~/.config/solaar/config.yaml`, keyed by device serial — state outside
 the repo, but re-derivable: the commands above *are* the recovery procedure, so there
@@ -58,6 +70,11 @@ Lightspeed receiver stays enumerated throughout, so there is no `ACTION=="add"` 
 event to reapply on. Solaar's answer is to listen for HID++ device-connection
 notifications and reapply its saved settings when the headset wakes — which is why it
 runs as a session service instead of being invoked once at boot.
+
+You can watch it work: power the headset on and the lights come up for a moment
+before going out again. That is the firmware's own lighting, followed by Solaar's
+reapply landing. The flash is the mechanism, not a fault — if the lights ever come up
+and *stay* up, check that `solaar.service` is running in the user session.
 
 ### The motherboard and GPU are left alone
 
