@@ -40,6 +40,40 @@ version here predates much of the 50-series work. `--list-devices` is the answer
 Nothing here lights up while the machine is off, and if Aura goes dark in standby
 check ErP below rather than OpenRGB.
 
+### The G733 headset is Solaar's job, not OpenRGB's
+
+OpenRGB can set the headset's LEDs, but it cannot keep them set. The G733 stores
+nothing: it forgets the setting on every power cycle, and it powers itself off after
+30 idle minutes. The Lightspeed receiver stays enumerated the whole time, so there is
+no `ACTION=="add"` event to reapply on either — which is why every OpenRGB and
+HeadsetControl thread on this ends at "write a polling daemon".
+
+Solaar is the right tool: it watches HID++ device-connection notifications and
+reapplies its saved settings when the headset wakes. `hardware.logitech.wireless`
+in `configuration.nix` installs it with the udev rules it needs, and a user service
+in `home.nix` keeps it running.
+
+To turn the lighting off (once; Solaar then remembers it per device serial):
+
+```sh
+solaar config "G733 Gaming Headset"                       # list settings + current values
+solaar config "G733 Gaming Headset" led_control true      # hand the zones to Solaar
+solaar config "G733 Gaming Headset" led_zone_65281 '{ID: 0}'
+solaar config "G733 Gaming Headset" led_zone_65282 '{ID: 0}'
+```
+
+The headset has to be powered **on** when you run these: the LED features live on the
+headset, not the receiver, so with it off Solaar cannot even see them. `led_control`
+has to go first — the zone settings do nothing while the firmware still owns the LEDs.
+`65281`/`65282` are zones `0xFF01`/`0xFF02` (the logo and the primary ring, OpenRGB's
+"Logo Zone" and "Primary Zone"), and effect `ID: 0` is `Disabled`. Other effect IDs,
+if you ever want them: `1` Static, `2` Pulse, `3` Cycle, `4` Wave, `0x0A` Breathe —
+Static and Breathe take a `color`, e.g. `'{ID: 1, color: 0xcba6f7}'`.
+
+These are saved to `~/.config/solaar/config.yaml`, keyed by device serial — state
+outside the repo, but re-derivable: the four commands above are the recovery
+procedure, so there is nothing here worth backing up.
+
 ### Profiles are state outside the repo
 
 The GUI saves profiles as binary `.orp` files under `~/.config/OpenRGB` (the service

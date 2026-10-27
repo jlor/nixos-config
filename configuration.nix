@@ -214,6 +214,22 @@ in
   # See docs/hardware.md for how to make one stick across a reinstall.
   services.hardware.openrgb.enable = true;
 
+  # The G733 headset's lighting is not OpenRGB's to hold onto. The headset forgets
+  # any LED setting when it powers off — and it powers itself off after 30 idle
+  # minutes (adc_power_management) — while the Lightspeed receiver stays enumerated
+  # throughout, so there is no udev event to reapply anything on. OpenRGB has no
+  # answer to that but polling. Solaar does: it listens for HID++ device-connection
+  # notifications and reapplies its saved LED settings each time the headset wakes.
+  #
+  # enable      -> logitech-udev-rules. Without it the receiver's /dev/hidraw* is
+  #                root-only, and Solaar just shows no LED controls at all.
+  # enableGraphical -> the solaar package (the module also pulls in ltunify).
+  # The daemon doing the reapplying is a user service, in home.nix.
+  hardware.logitech.wireless = {
+    enable = true;
+    enableGraphical = true;
+  };
+
   ############################################################
   # Gaming
   ############################################################
