@@ -32,7 +32,7 @@ A reinstall gets back to this exact state with three things: install NixOS, run
 - **Gaming:** Steam (Proton-GE, gamescope, gamemode), Lutris, MangoHud, the sim racing
   stack, WiVRn for the Quest 3.
 - **AI:** Claude Code against Anthropic; omp against an abliterated Qwen3.8-27B
-  served locally by NInfer on the 5090.
+  served locally by NInfer on the 5090 (started on demand, see [AI](docs/ai.md)).
 - **Under it:** Nvidia open driver, PipeWire, NetworkManager, Bluetooth, zram, nix-ld,
   Solaar for the Logitech headset.
 

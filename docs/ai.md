@@ -16,8 +16,15 @@ work. Configured in `ai.nix` (the server, the model, both clients),
 - **The engine:** [NInfer](https://github.com/Neroued/ninfer) serves an
   abliterated Qwen3.8-27B NVFP4. Written for this exact GPU, so it's two to three
   times faster than Ollama was, with a 204,800-token context instead of 64k.
+  - **Not started at boot.** It holds ~24 GiB of VRAM for as long as it runs,
+    which a game then has to compete for, so it's started on demand:
+    ```bash
+    sudo systemctl start ninfer   # and `stop` when you're done
+    ```
   - `systemctl status ninfer` shows the server, `curl localhost:8080/health` its
     readiness, and `GET /v1/models` the model id and effective context length.
+    Startup takes a few seconds while the weights load; omp will fail to
+    connect until `/health` is ready.
   - For a plain chat without a client:
     ```bash
     curl http://127.0.0.1:8080/v1/chat/completions \
@@ -86,8 +93,8 @@ download is resumable and the unit is a no-op once the model is in place, so a
 failed download just retries — after a minute at first, backing off to every ten
 minutes, and giving up into `systemctl --failed` after ten tries in six hours so
 a permanent failure stops re-downloading. `journalctl -fu ninfer-model` follows
-it; until it finishes, `ninfer.service` sits in `activating` — expected, not a
-hang.
+it; starting `ninfer` before it finishes just waits on it, since the server
+requires the unit.
 
 Budget roughly 40 GiB of free space while it runs: the published file is a **v2**
 container and the current engine only loads v3, so the unit upgrades it with
