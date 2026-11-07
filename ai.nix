@@ -142,9 +142,13 @@ in
     '';
   };
 
+  # Deliberately not in any target's wants: started on demand with
+  # `sudo systemctl start ninfer`. The server pins ~24 GiB of the 5090's VRAM
+  # for weights and KV the whole time it is up, which leaves a game competing
+  # for what's left, so it does not belong in the boot path. `requires` still
+  # pulls in ninfer-model, which is a no-op once the artifact is in place.
   systemd.services.ninfer = {
     description = "NInfer inference server (abliterated Qwen3.8-27B NVFP4)";
-    wantedBy = [ "multi-user.target" ];
     after = [ "ninfer-model.service" ];
     requires = [ "ninfer-model.service" ];
 
