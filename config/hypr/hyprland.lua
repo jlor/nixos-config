@@ -202,7 +202,10 @@ hl.config({
     misc = {
         force_default_wallpaper = 0,
         disable_hyprland_logo   = true,
-        vrr                     = 2, -- adaptive sync for fullscreen games
+        -- Off: neither monitor supports adaptive sync. Leaving it on made the
+        -- driver retry VRR on every commit and spam the log with
+        -- "drm: No Adaptive sync support for output". See docs/gaming.md.
+        vrr                     = 0,
     },
 
     cursor = {

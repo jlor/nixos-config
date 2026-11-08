@@ -12,6 +12,37 @@ Alternative: add the Battle.net installer to Steam as a non-Steam game and force
 
 - Proton-GE is pre-installed; select it under Properties → Compatibility.
 - Launch options: `gamemoderun mangohud %command%`
+- **VRR (adaptive sync) is off** (`misc.vrr = 0` in `config/hypr/hyprland.lua`),
+  because neither monitor supports it. With it on, the driver retried VRR on every
+  commit and filled the Hyprland log with
+  `drm: No Adaptive sync support for output`.
+
+  **The Samsung on DP-1 has no FreeSync.** The CJG5 line gates it per model: the
+  manual carries a FreeSync section only for the 1080p C32JG53FD, not for the
+  1440p variants, and this panel is 2560x1440 native. There is accordingly no
+  FreeSync entry in the monitor's Game menu, the kernel reports `vrr_capable = 0`
+  for DP-1, and Hyprland logs
+  `aquamarine: drm: connector DP-1 crtc is incapable of vrr`. It is the monitor and
+  not the driver: `nvidia_modeset`'s `conceal_vrr_caps` is `N`, so nothing is being
+  hidden. Nothing in this repo can change that — it needs a monitor that supports
+  adaptive sync.
+
+  If a VRR-capable monitor ever replaces it, set `misc.vrr` back to `2` (fullscreen
+  only — the desktop keeps a fixed refresh rate and only games get adaptive sync)
+  and check:
+
+  ```sh
+  # want 1, not 0 (drm_info isn't installed; nix run fetches it on the fly)
+  nix run nixpkgs#drm_info -- /dev/dri/card1 | grep -A1 vrr_capable
+  hyprctl monitors | grep vrr   # vrr: true while something is fullscreen
+  ```
+
+  Two traps when testing with `misc.vrr = 2`: `vrr: false` on an idle desktop is
+  expected, so you need a genuinely fullscreen window; and a transparent one never
+  counts (kitty is 0.88 opacity) — `solitaryBlockedBy: not opaque` in
+  `hyprctl monitors` is the tell. Also note the panel's EDID advertises
+  `Monitor ranges: 50-144 Hz V`, which is just the GTF refresh range every monitor
+  carries, not evidence of adaptive sync.
 
 ## Sim racing
 
