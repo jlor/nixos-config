@@ -12,6 +12,11 @@ Alternative: add the Battle.net installer to Steam as a non-Steam game and force
 
 - Proton-GE is pre-installed; select it under Properties → Compatibility.
 - Launch options: `gamemoderun mangohud %command%`
+- **Tearing is off** (`general.allow_tearing = false` in
+  `config/hypr/hyprland.lua`), so games stay vsynced at the monitor's refresh rate.
+  The `games-allow-tearing` window rule is left in place but inert as a result;
+  flipping `allow_tearing` back to `true` is all it takes to re-enable tearing, and
+  its lower input lag, for Steam games.
 - **VRR (adaptive sync) is off** (`misc.vrr = 0` in `config/hypr/hyprland.lua`),
   because neither monitor supports it. With it on, the driver retried VRR on every
   commit and filled the Hyprland log with
