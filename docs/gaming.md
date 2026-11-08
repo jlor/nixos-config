@@ -48,6 +48,33 @@ Alternative: add the Battle.net installer to Steam as a non-Steam game and force
   `hyprctl monitors` is the tell. Also note the panel's EDID advertises
   `Monitor ranges: 50-144 Hz V`, which is just the GTF refresh range every monitor
   carries, not evidence of adaptive sync.
+- **DP-1 runs at 120Hz, not the 144Hz the panel supports.** Long-standing, not a
+  regression, and the cause is unresolved. Both monitor-side settings are already
+  correct (Game → Refresh Rate = 144 Hz, System → DisplayPort Ver. = `1.2↑`) and
+  the EDID validly advertises 1440p144 (586.58 MHz, under the monitor's 590 MHz DP
+  ceiling) — but the Nvidia driver prunes that one mode at connector probe, before
+  Hyprland ever sees it. `drm_info` lists only 120/100/60 Hz.
+
+  Already ruled out, so they don't get re-tried:
+  - **Not the OSD, and not a stale link.** A cold power-cycle (power pulled, 10s)
+    leaves the EDID byte-identical and the mode list unchanged.
+  - **Not forceable from the config.** Asking for the mode by name is silently
+    ignored — the driver won't synthesise a mode it hasn't validated — and
+    Hyprland 0.55's Lua config has no `modeline` support.
+  - **Probably not the cable.** Mode pruning is validated against what the monitor
+    advertises over DPCD, not the rate the link actually trained at; a marginal
+    cable shows up as instability, not a missing mode.
+
+  The leading (unconfirmed) theory is that the driver validates at 10bpc. Against
+  DP 1.2's 17.28 Gbps payload budget, 1440p120 needs 14.93 and fits while 1440p144
+  needs 17.60 and misses by 0.3 — which would prune exactly this one mode. At 8bpc
+  both fit (11.95 and 14.08), so 144Hz ought to work. There is no supported lever:
+  Nvidia exposes no `max bpc` connector property, and `hdmi_deepcolor` is
+  HDMI-only.
+
+  Nothing to change here if it's ever fixed — `mode = "highrr"` in
+  `config/hypr/hyprland.lua` picks the highest rate the monitor advertises. Check
+  with `hyprctl monitors | grep -A1 "^Monitor DP-1"`.
 
 ## Sim racing
 
