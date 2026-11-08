@@ -170,7 +170,7 @@ hl.config({
             inactive_border = "rgba(313244aa)",
         },
         resize_on_border = true,
-        allow_tearing    = true, -- lets games opt in to tearing for lower input lag
+        allow_tearing    = false, -- no tearing; games stay vsynced
         layout           = "dwindle",
     },
 
@@ -261,7 +261,8 @@ hl.window_rule({
     no_focus = true,
 })
 
--- Steam games may tear in fullscreen: lowest input lag.
+-- Inert while general.allow_tearing is false; kept so flipping that one setting
+-- is all it takes to get tearing (and its lower input lag) back for Steam games.
 hl.window_rule({
     name  = "games-allow-tearing",
     match = { class = "^(steam_app_.*)$" },
