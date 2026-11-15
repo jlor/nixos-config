@@ -96,10 +96,12 @@ Nix over a profile clicked together in the GUI.
 The board's Wi-Fi 7 + Bluetooth 5.4 is the onboard MediaTek MT7927 combo chip
 (PCIe `14c3:7927`; the BT side is the MT6639 controller, USB `0489:e13a`). It
 needs kernel >= 7.2 (BT support merged in 7.1, Wi-Fi in 7.2), so
-`configuration.nix` pins `boot.kernelPackages` to the 7.2 series from a
-rev-pinned `nixpkgs-unstable` flake input — everything else stays on the
-stable channel. When the repo moves to 26.11 (default kernel >= 7.2), delete
-the pin and the input.
+`configuration.nix` sets `boot.kernelPackages` to `pkgs.linuxPackages_7_3`.
+26.05 packages the 7.x series alongside its 6.18 default, so this comes from
+the stable channel like everything else; it moves with the weekly flake.lock
+refresh, within the 7.3 series. 7.3 rather than 7.2 because 7.2 is EOL
+upstream. When the repo moves to 26.11 (default kernel >= 7.2), drop the line
+and take the default.
 
 Firmware: the Wi-Fi blobs come from linux-firmware (`hardware.enableRedistributableFirmware`);
 the BT blob is not in upstream linux-firmware yet and is extracted from the
