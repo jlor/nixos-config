@@ -1,4 +1,4 @@
-{ config, lib, pkgs, unstableNixpkgs, ... }:
+{ config, lib, pkgs, ... }:
 
 let
   username = "jlor";
@@ -15,12 +15,11 @@ in
   # Wi-Fi 7 + BT 5.4 card: BT support merged in 7.1, Wi-Fi in 7.2. With no
   # driver for the PCIe side, the chip never configures the MT6639 BT
   # controller, so without this there is no Wi-Fi interface and no Bluetooth
-  # adapter at all. Pin the 7.2 series from the pinned nixpkgs-unstable flake
-  # input: only the kernel and its module tree (incl. the Nvidia modules
-  # below, which come from the same kernel set) move; everything else stays on
-  # 26.05. Drop this pin (and the flake input) when moving to 26.11, whose
-  # default kernel is >= 7.2.
-  boot.kernelPackages = unstableNixpkgs.linuxKernel.packages.linux_7_2;
+  # adapter at all. 26.05 packages the 7.x series alongside its 6.18 default,
+  # so ask for it by name; the Nvidia modules below come from the same kernel
+  # set and follow it. 7.3 rather than 7.2 because 7.2 is EOL upstream and is
+  # already gone from nixpkgs-unstable — 26.05 will drop it too.
+  boot.kernelPackages = pkgs.linuxPackages_7_3;
 
   boot.kernelParams = [
     "amd_pstate=active"   # modern AMD CPU frequency driver
