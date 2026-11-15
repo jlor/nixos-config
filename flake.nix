@@ -24,7 +24,7 @@
     # (change the rev, `nix flake update comin`); take the next release tag
     # rather than master.
     comin = {
-      url = "github:nlewo/comin/f95451172287f3cb36249a2cdef56efa9bbeef19";
+      url = "github:nlewo/comin/51e20d80b237b405009ddeb8c19a648eb95737e0";
       inputs.nixpkgs.follows = "nixpkgs";
     };
   };
