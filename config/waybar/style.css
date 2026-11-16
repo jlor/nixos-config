@@ -93,6 +93,7 @@ window#waybar.empty #window {
 #cpu,
 #temperature,
 #memory,
+#custom-comin,
 #custom-gh-nixos,
 #custom-gh-homeops,
 #pulseaudio,
@@ -119,6 +120,21 @@ window#waybar.empty #window {
 #network.disconnected,
 #bluetooth.disabled {
   color: @overlay0;
+}
+
+/* comin deploy state. Green is the quiet case and stays out of the way;
+   anything else is asking to be looked at, so it gets a colour that reads
+   from across the room. */
+#custom-comin.ok        { color: @green; }
+#custom-comin.busy      { color: @blue; }
+#custom-comin.reboot    { color: @yellow; }
+#custom-comin.suspended { color: @peach; }
+#custom-comin.unknown   { color: @overlay0; }
+
+#custom-comin.failed {
+  color: @crust;
+  background: @red;
+  border-radius: 12px;
 }
 
 #custom-power {

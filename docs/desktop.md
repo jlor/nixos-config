@@ -22,7 +22,27 @@ Reload Hyprland with `hyprctl reload`, and Waybar with `pkill waybar; waybar &`.
 
 Waybar runs at the top of both screens; its modules live in
 `config/waybar/`. The right-hand side of the bar, after the memory meter,
-tracks open PRs: λ is nixos-config, ⎈ is
+reads in the order a change travels: deploy state first, then open PRs.
+
+Deploy state (`config/waybar/comin-state.sh`, refreshed every minute) answers
+"is this machine running what's on `main`?" — the question a merged PR does
+*not* answer, because a comin build that fails is silent and leaves the
+desktop on its old generation indefinitely.
+
+| | |
+|---|---|
+| 󰄬 green | up to date, last build fine |
+| 󰚰 blue | evaluating, building or deploying |
+| 󰅙 **red** | eval, build or deploy failed — with the retry count |
+| 󰜉 yellow | reboot required to finish a deploy |
+| 󰏤 peach | comin suspended, so nothing is deploying |
+| 󰚰 grey | comin not reachable |
+
+Hover for the commit, the build status and the first lines of the error.
+Left-click opens a wofi list: the error, the commit on GitHub, the comin log
+(`journalctl -u comin`), or the full `comin status`.
+
+Next to it, open PR counts: λ is nixos-config, ⎈ is
 [x00-sh/home-ops](https://github.com/x00-sh/home-ops), refreshed every
 5 minutes through `gh` (the same login bootstrap sets up). Left-click an
 icon for that repo's open PRs in a wofi list — Enter opens the PR in

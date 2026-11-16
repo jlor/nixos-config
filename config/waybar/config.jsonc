@@ -9,7 +9,7 @@
 
   "modules-left": ["custom/logo", "hyprland/workspaces", "hyprland/window"],
   "modules-center": ["clock"],
-  "modules-right": ["tray", "custom/gpu", "cpu", "temperature", "memory", "custom/gh-nixos", "custom/gh-homeops", "pulseaudio", "bluetooth", "network", "custom/power"],
+  "modules-right": ["tray", "custom/gpu", "cpu", "temperature", "memory", "custom/comin", "custom/gh-nixos", "custom/gh-homeops", "pulseaudio", "bluetooth", "network", "custom/power"],
 
   "custom/logo": {
     "format": "",
@@ -95,6 +95,20 @@
   "memory": {
     "format": "󰘚  {percentage}%",
     "interval": 5
+  },
+
+  // Deploy state (config/waybar/comin-state.sh). Sits just before the PR
+  // counts, so the right-hand side reads in the order a change travels:
+  // open PRs → what the machine is running. A failed comin build is
+  // otherwise silent — comin retries forever and the machine quietly stays
+  // on its old generation — so this is the thing that makes it visible.
+  // Unlike the modules either side it returns JSON, because the colour
+  // belongs in style.css and the tooltip carries the actual error.
+  "custom/comin": {
+    "exec": "~/.config/waybar/comin-state.sh",
+    "return-type": "json",
+    "interval": 60,
+    "on-click": "~/.config/waybar/comin-state.sh --list"
   },
 
   // Open PR counts for the two GitHub repos (config/waybar/gh-prs.sh).
