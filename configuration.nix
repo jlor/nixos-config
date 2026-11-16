@@ -44,14 +44,20 @@ in
   boot.initrd.verbose = false;
   # Load the Nvidia driver early so the splash shows in full resolution
   boot.initrd.kernelModules = [ "nvidia" "nvidia_modeset" "nvidia_uvm" "nvidia_drm" ];
-  # Show the boot menu for 5 seconds, so a bad kernel or driver can be rolled
-  # back from the machine itself. This was 0 ("hold Space to show it"), which
-  # is only a rollback path in theory: when 7.3.4 froze at the login screen
-  # (2026-11-16, #101), Space never caught the menu across several attempts,
-  # and the way out was comin deploying a revert — which needs the machine to
-  # still be reachable. configurationLimit above keeps 10 generations; this is
-  # what makes them selectable. Five seconds a boot is the price of that.
-  boot.loader.timeout = 5;
+  # Show the boot menu long enough to actually see it. This was 0 ("hold Space
+  # to show it"), which is a rollback path in theory only — Space never caught
+  # it. Then 5, which was written to the ESP correctly and still showed
+  # nothing: the monitors do not finish waking over DisplayPort until after
+  # the menu has already timed out, which is the same reason the LUKS
+  # passphrase prompt is sometimes invisible. 15 outlasts the sync.
+  # configurationLimit above keeps 10 generations; this is what makes them
+  # selectable without needing another machine.
+  #
+  # Not the only way in, and not the most reliable one: from a running system
+  # `systemctl reboot --boot-loader-menu=30` forces the menu on the next boot,
+  # and `--boot-loader-entry=<name>` boots a chosen generation without needing
+  # to see anything at all (`bootctl list` for the names). See docs/deploying.md.
+  boot.loader.timeout = 15;
 
   hardware.cpu.amd.updateMicrocode = true;
   hardware.enableRedistributableFirmware = true;
@@ -84,18 +90,27 @@ in
     xwayland.enable = true; # for Battle.net, Steam and other X11 apps
   };
 
-  # Graphical login screen (ReGreet on greetd), themed to match
-  # The login screen's compositor (cage) knows nothing about the monitor layout: it
-  # spans both screens and centres the login box across the join. Switch the
-  # portrait screen (HDMI-A-1) off while logging in, so the box sits on the main one.
+  # Graphical login screen (ReGreet on greetd), themed to match.
+  #
+  # The login screen's compositor (cage) knows nothing about the monitor layout, so
+  # it spans both screens and centres the login box across the join. This used to be
+  # corrected by switching the portrait screen off first:
+  #
+  #   wlr-randr --output HDMI-A-1 --off || true
+  #   exec regreet
+  #
+  # That is gone, because switching an output off forces a DRM connector *detach* at
+  # the exact moment the greeter starts, and that is the code path the login screen
+  # hangs in (#101: notifyDetachBegin -> dpPreModeset -> nvEvoDetachConnector, with
+  # nvidia-modeset stuck holding a semaphore against cage). The hang predates the
+  # 7.3 kernel — it is the long-standing "black screen, no login, just reboot"
+  # behaviour on this machine; 7.3.4 only made it frequent enough to catch in a log.
+  #
+  # So the box is centred across both screens for now. Cosmetics are not worth a
+  # boot that needs three attempts. Fixing the layout without a runtime modeset is
+  # the open question — see docs/desktop.md.
   services.greetd.settings.default_session.command =
-    let
-      regreetOnMainScreen = pkgs.writeShellScript "regreet-main-screen" ''
-        ${pkgs.wlr-randr}/bin/wlr-randr --output HDMI-A-1 --off || true
-        exec ${lib.getExe config.programs.regreet.package}
-      '';
-    in
-    "${pkgs.dbus}/bin/dbus-run-session ${lib.getExe pkgs.cage} -s -- ${regreetOnMainScreen}";
+    "${pkgs.dbus}/bin/dbus-run-session ${lib.getExe pkgs.cage} -s -- ${lib.getExe config.programs.regreet.package}";
 
   programs.regreet = {
     enable = true;
