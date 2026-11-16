@@ -50,6 +50,24 @@ Firefox, Esc closes. A dash in the bar (or a toast on click) means GitHub
 wasn't reachable, usually just no network. The clock shows the time;
 middle-click it for the full date.
 
+## The login screen
+
+ReGreet runs inside `cage`, a single-window compositor. cage knows nothing about the
+monitor layout, so it spans both screens and centres the login box across the join —
+half on the landscape screen, half on the portrait one.
+
+That used to be corrected by switching the portrait screen off with `wlr-randr
+--output HDMI-A-1 --off` just before starting ReGreet. **Don't put that back.**
+Switching an output off forces a DRM connector detach at the moment the greeter
+starts, and that is exactly where the login screen hangs: `nvidia-modeset` deadlocks
+in its DisplayPort detach path against cage, and you get a black screen with a cursor
+and no way in but another reboot. It is the long-standing "just reboot" behaviour on
+this machine, and it is tracked in issue #101.
+
+So the misaligned box is deliberate for now. A fix wants to be something that does
+not trigger a runtime modeset — telling cage which output to use up front rather than
+turning one off afterwards, or a greeter that understands multiple monitors.
+
 ## At login
 
 Four apps start themselves and land in the same place every time

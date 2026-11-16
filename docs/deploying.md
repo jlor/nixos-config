@@ -37,6 +37,24 @@ Do not rely on holding a key to summon a hidden menu. That was the setup until
 caught in practice; recovery depended on comin still being reachable to deploy a
 revert, which only worked because the freeze left the system running underneath.
 
+**Don't trust the menu on its own either.** `timeout = 5` was written to the ESP
+correctly and still showed nothing: the monitors do not finish waking over
+DisplayPort until after it has timed out. It is 15 now, but the same sync delay is
+why the LUKS passphrase prompt is sometimes invisible too — on this machine, "no
+picture" and "not running" are easy to confuse.
+
+The reliable path does not involve seeing anything. From a running system, pick what
+the *next* boot does:
+
+```sh
+bootctl list                                   # entry names (nixos-comin-generation-NN.conf)
+systemctl reboot --boot-loader-menu=30         # force the menu, 30s, next boot only
+systemctl reboot --boot-loader-entry=nixos-comin-generation-57.conf  # boot that one
+```
+
+Both go through an EFI variable, so they work with the screen dark. Use them *before*
+a risky reboot, not after it has gone wrong.
+
 Changes go through pull requests (see [CI](#ci) below); the bootstrap's own commit is the
 one exception, pushed directly because you're the repo admin. The repo is public, so
 comin needs no token. Never commit plaintext secrets (passwords, tokens, SSH keys) here;
