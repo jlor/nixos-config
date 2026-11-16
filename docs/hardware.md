@@ -96,21 +96,19 @@ Nix over a profile clicked together in the GUI.
 The board's Wi-Fi 7 + Bluetooth 5.4 is the onboard MediaTek MT7927 combo chip
 (PCIe `14c3:7927`; the BT side is the MT6639 controller, USB `0489:e13a`). It
 needs kernel >= 7.2 (BT support merged in 7.1, Wi-Fi in 7.2), so
-`configuration.nix` pins `boot.kernelPackages` to the 7.3 series from a
+`configuration.nix` pins `boot.kernelPackages` to the 7.2 series from a
 rev-pinned `nixpkgs-unstable` flake input — everything else stays on the
-stable channel.
+stable channel. When the repo moves to 26.11 (default kernel >= 7.2), delete
+the pin and the input.
 
-26.05 does package 7.x, so the kernel alone would not need the pin. The
-Nvidia driver is what does: it comes from the same kernel package set, and
-26.05's newest driver (595.71.05) does not compile against 7.3, because
-`nvidia/os-interface.c` calls `strncpy` and 7.3 no longer exposes it to
-modules. Unstable's 595.112.07 builds fine, and Hydra builds that pairing, so
-it comes from the cache rather than being compiled here.
-
-Drop the pin and the input once 26.05 ships a driver that builds against 7.3,
-or when the repo moves to 26.11. A kernel or driver bump here must be
-**built**, not just evaluated — a mismatch shows up only at build time, and
-that has blocked deploys twice (see `docs/deploying.md`).
+**Held at 7.2.13 on purpose (2026-11-16).** A move to 7.3.4 with a refreshed
+`flake.lock` (#95, #97, #98) built and deployed, but the first boot into it
+left the login screen black with only a cursor. The lock, the pin and the
+kernel line were restored to the last state the machine ran (#92) until the
+cause is known. 7.2 is EOL upstream and already gone from newer nixpkgs, so
+this is a holding position, not a destination: the next attempt at 7.3 should
+be tested with `nixos-rebuild boot` and a manual reboot while comin is
+suspended, not by merging.
 
 Firmware: the Wi-Fi blobs come from linux-firmware (`hardware.enableRedistributableFirmware`);
 the BT blob is not in upstream linux-firmware yet and is extracted from the
