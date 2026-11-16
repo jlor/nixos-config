@@ -15,16 +15,12 @@ in
   # Wi-Fi 7 + BT 5.4 card: BT support merged in 7.1, Wi-Fi in 7.2. With no
   # driver for the PCIe side, the chip never configures the MT6639 BT
   # controller, so without this there is no Wi-Fi interface and no Bluetooth
-  # adapter at all. 26.05 does package the 7.x series, but the Nvidia modules
-  # below come from this same kernel set, and 26.05's newest driver
-  # (595.71.05) does not compile against 7.3: nvidia/os-interface.c calls
-  # strncpy, which 7.3 no longer exposes to modules. So take the kernel from
-  # the pinned nixpkgs-unstable, whose 595.112.07 does build against it — and
-  # is cached, since Hydra builds that pairing. Only the kernel, its module
-  # tree and the Nvidia driver come from that pin; everything else is 26.05.
-  # Drop the pin (and the flake input) once 26.05 ships a driver that builds
-  # against 7.3.
-  boot.kernelPackages = unstableNixpkgs.linuxKernel.packages.linux_7_3;
+  # adapter at all. Pin the 7.2 series from the pinned nixpkgs-unstable flake
+  # input: only the kernel and its module tree (incl. the Nvidia modules
+  # below, which come from the same kernel set) move; everything else stays on
+  # 26.05. Drop this pin (and the flake input) when moving to 26.11, whose
+  # default kernel is >= 7.2.
+  boot.kernelPackages = unstableNixpkgs.linuxKernel.packages.linux_7_2;
 
   boot.kernelParams = [
     "amd_pstate=active"   # modern AMD CPU frequency driver

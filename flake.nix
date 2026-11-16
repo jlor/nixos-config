@@ -7,19 +7,12 @@
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-26.05";
 
     # Nixpkgs at nixos-unstable, used for exactly one thing: boot.kernelPackages
-    # in configuration.nix, which is also where the Nvidia driver comes from.
-    # 26.05 does package the 7.x series the MT7927 Wi-Fi/BT card needs, but its
-    # newest Nvidia driver is 595.71.05, which does not compile against 7.3
-    # (nvidia/os-interface.c calls strncpy, which 7.3 no longer exposes to
-    # modules). Unstable has 595.112.07, which does — and Hydra has already
-    # built nvidia-open 595.112.07 against 7.3.4, so this pairing is cached
-    # rather than compiled here. Pinned to a rev on purpose, like comin: the
-    # kernel and the graphics driver must not move unattended. Bump manually
-    # (`nix flake update nixpkgs-unstable`), and build the result, do not just
-    # evaluate it — a kernel/driver mismatch only shows up at build time.
-    # Drop this input once nixpkgs 26.05 ships a driver that builds against 7.3.
+    # in configuration.nix. The onboard MT7927 Wi-Fi/BT card needs kernel >= 7.2,
+    # while 26.05 ships 6.18. Pinned to a rev on purpose, like comin: the kernel
+    # must not move unattended — bump manually (`nix flake update nixpkgs-unstable`).
+    # Drop this input when moving to 26.11, whose default kernel is >= 7.2.
     nixpkgs-unstable = {
-      url = "github:NixOS/nixpkgs/db62b45e1cbe0ac2d7e7ed652e863c53d0a9cc4d";
+      url = "github:NixOS/nixpkgs/31ecbaca1bdefa45dffc409f0250bd8039ea0010";
     };
 
     # Manages dotfiles (Hyprland, Waybar, kitty, ...) from this repo
@@ -49,7 +42,7 @@
   let
     # allowUnfree: the bootstrap uses the 1Password CLI.
     pkgs = import nixpkgs { system = "x86_64-linux"; config.allowUnfree = true; };
-    # Kernel and Nvidia driver pin (see configuration.nix).
+    # Kernel pin for the onboard MT7927 Wi-Fi/BT card (see configuration.nix).
     # Imported with allowUnfree so the pinned kernel's Nvidia packages evaluate.
     unstableNixpkgs = import nixpkgs-unstable { system = "x86_64-linux"; config.allowUnfree = true; };
     # Built with shellcheck, so a broken script fails CI rather than a fresh install.
