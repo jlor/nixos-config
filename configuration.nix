@@ -97,6 +97,15 @@ in
     in
     "${pkgs.dbus}/bin/dbus-run-session ${lib.getExe pkgs.cage} -s -- ${regreetOnMainScreen}";
 
+  # Point the login screen's compositor at the RTX 5090. The 9800X3D's iGPU is
+  # also a DRM device and in fact enumerates first (card0 is amdgpu, card1 is
+  # nvidia), with no monitors attached to it — the kernel says as much:
+  # "amdgpu: Cannot find any crtc or sizes". Nothing otherwise stops wlroots
+  # choosing it. by-path rather than card1 because the numbering, while stable
+  # on this board so far, is not guaranteed across kernels.
+  systemd.services.greetd.environment.WLR_DRM_DEVICES =
+    "/dev/dri/by-path/pci-0000:01:00.0-card";
+
   programs.regreet = {
     enable = true;
     settings = {
