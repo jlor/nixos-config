@@ -96,12 +96,21 @@ Nix over a profile clicked together in the GUI.
 The board's Wi-Fi 7 + Bluetooth 5.4 is the onboard MediaTek MT7927 combo chip
 (PCIe `14c3:7927`; the BT side is the MT6639 controller, USB `0489:e13a`). It
 needs kernel >= 7.2 (BT support merged in 7.1, Wi-Fi in 7.2), so
-`configuration.nix` sets `boot.kernelPackages` to `pkgs.linuxPackages_7_3`.
-26.05 packages the 7.x series alongside its 6.18 default, so this comes from
-the stable channel like everything else; it moves with the weekly flake.lock
-refresh, within the 7.3 series. 7.3 rather than 7.2 because 7.2 is EOL
-upstream. When the repo moves to 26.11 (default kernel >= 7.2), drop the line
-and take the default.
+`configuration.nix` pins `boot.kernelPackages` to the 7.3 series from a
+rev-pinned `nixpkgs-unstable` flake input — everything else stays on the
+stable channel.
+
+26.05 does package 7.x, so the kernel alone would not need the pin. The
+Nvidia driver is what does: it comes from the same kernel package set, and
+26.05's newest driver (595.71.05) does not compile against 7.3, because
+`nvidia/os-interface.c` calls `strncpy` and 7.3 no longer exposes it to
+modules. Unstable's 595.112.07 builds fine, and Hydra builds that pairing, so
+it comes from the cache rather than being compiled here.
+
+Drop the pin and the input once 26.05 ships a driver that builds against 7.3,
+or when the repo moves to 26.11. A kernel or driver bump here must be
+**built**, not just evaluated — a mismatch shows up only at build time, and
+that has blocked deploys twice (see `docs/deploying.md`).
 
 Firmware: the Wi-Fi blobs come from linux-firmware (`hardware.enableRedistributableFirmware`);
 the BT blob is not in upstream linux-firmware yet and is extracted from the

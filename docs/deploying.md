@@ -6,7 +6,23 @@ it, and Renovate keeps the inputs fresh.
 ## GitOps with comin
 
 Once comin is running, the git repo is the source of truth: push to `main` and the
-desktop deploys it within about a minute. Commits that fail to build are not deployed.
+desktop deploys it within about a minute — *if* the closure builds. A commit that
+fails to build is not deployed, which is safe but silent: comin retries every 30
+seconds forever, the machine stays on its old generation, and nothing says so. A
+merged PR and a green CI check look identical whether or not the deploy landed.
+
+This has happened twice. A broken `vscode` in a nixpkgs bump stalled every deploy
+for five days, and a kernel/Nvidia mismatch stalled it again straight after. So
+after merging, check rather than assume:
+
+```sh
+comin status                    # build_status, and what is pending
+readlink -f /run/current-system # the generation actually in use
+journalctl -u comin -n 50       # look for "build failed for generation"
+```
+
+`comin suspend` stops the retry loop while you work out a fix; `comin resume`
+restarts it.
 
 Changes go through pull requests (see [CI](#ci) below); the bootstrap's own commit is the
 one exception, pushed directly because you're the repo admin. The repo is public, so
@@ -27,6 +43,17 @@ That catches broken options, removed or renamed packages and typos, which covers
 everything that can go wrong in a config. It doesn't do a full build: this desktop
 (Nvidia, Steam, CUDA) is too big for a free GitHub runner. Comin still refuses to deploy
 anything that fails to build on the machine itself.
+
+Mind the gap that leaves. Evaluation cannot see a kernel module that won't compile, or
+a package that is never in the binary cache because it's unfree and not redistributable
+(`vscode`). Both have stalled deploys here. For a kernel, Nvidia or nixpkgs bump, build
+it locally before merging — and build the whole thing, since a partial build proves
+less than it looks:
+
+```sh
+nix build .#nixosConfigurations.desktop.config.system.build.toplevel  # the real check
+nix eval  .#nixosConfigurations.desktop.config.system.build.toplevel.drvPath
+```
 
 `main` is protected: a commit can only land there once **Evaluate NixOS config** has
 passed, so comin only ever deploys checked commits. The usual flow:
