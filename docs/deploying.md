@@ -24,6 +24,19 @@ journalctl -u comin -n 50       # look for "build failed for generation"
 `comin suspend` stops the retry loop while you work out a fix; `comin resume`
 restarts it.
 
+### When a deploy boots badly
+
+A build that succeeds can still produce a system that will not come up — a kernel
+or graphics driver is only really tested by booting it. For that case the boot menu
+is the rollback path: `boot.loader.timeout = 5` in `configuration.nix` shows it for
+five seconds on every boot, and `configurationLimit = 10` keeps ten generations to
+pick from. Choose the previous generation, boot it, then fix the repo.
+
+Do not rely on holding a key to summon a hidden menu. That was the setup until
+2026-11-16 (`timeout = 0`), and when a kernel froze the login screen it could not be
+caught in practice; recovery depended on comin still being reachable to deploy a
+revert, which only worked because the freeze left the system running underneath.
+
 Changes go through pull requests (see [CI](#ci) below); the bootstrap's own commit is the
 one exception, pushed directly because you're the repo admin. The repo is public, so
 comin needs no token. Never commit plaintext secrets (passwords, tokens, SSH keys) here;

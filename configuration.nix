@@ -44,8 +44,14 @@ in
   boot.initrd.verbose = false;
   # Load the Nvidia driver early so the splash shows in full resolution
   boot.initrd.kernelModules = [ "nvidia" "nvidia_modeset" "nvidia_uvm" "nvidia_drm" ];
-  # Hide the boot menu; hold Space while booting to show it (for rollbacks)
-  boot.loader.timeout = 0;
+  # Show the boot menu for 5 seconds, so a bad kernel or driver can be rolled
+  # back from the machine itself. This was 0 ("hold Space to show it"), which
+  # is only a rollback path in theory: when 7.3.4 froze at the login screen
+  # (2026-11-16, #101), Space never caught the menu across several attempts,
+  # and the way out was comin deploying a revert — which needs the machine to
+  # still be reachable. configurationLimit above keeps 10 generations; this is
+  # what makes them selectable. Five seconds a boot is the price of that.
+  boot.loader.timeout = 5;
 
   hardware.cpu.amd.updateMicrocode = true;
   hardware.enableRedistributableFirmware = true;
