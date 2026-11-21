@@ -39,6 +39,26 @@ down whether it is the translation layer before you start changing settings.
 Builds installed by `protonup-qt` land in the same directory but are imperative
 state outside this repo; prefer the symlink.
 
+## WoW falling out of fullscreen
+
+WoW drops its own fullscreen state on a **~35 second timer**, landing the window
+back in the tiling layout with waybar showing. It is the client asking for it,
+not Hyprland taking it away — measured with the window focused and the cursor
+still, `fullscreenClient` goes 2 → 0 every 34-44s.
+
+The `wow-keep-fullscreen` rule in `config/hypr/hyprland.lua` handles it: it
+suppresses the client's fullscreen requests and opens the window fullscreen, so
+no manual Super+F. The global `suppress-maximize-events` rule does not cover
+this, because it only suppresses `maximize`.
+
+Worth knowing if another game does the same thing: the rule matches on **title**,
+because umu hands every Proton game the identical class `steam_app_default`.
+Copy the rule with a new title rather than widening it to the class.
+
+If a game resists even that, run it under **gamescope** (Lutris → Configure →
+System options). It is a nested compositor, so the game's window management
+never reaches Hyprland at all.
+
 ## Steam tips
 
 - Proton-GE is pre-installed; select it under Properties → Compatibility.
