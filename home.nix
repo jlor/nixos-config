@@ -1,4 +1,4 @@
-{ pkgs, lib, ... }:
+{ pkgs, lib, protonPkgs, ... }:
 
 let
   # Your SSH signing key's PUBLIC half from 1Password (starts with "ssh-ed25519 ").
@@ -67,6 +67,20 @@ in
   # unmanaged — omp rewrites it at runtime, so declaring it would either fight
   # the app or silently drift from this repo.
   home.file.".omp/agent/models.yml".source = ./config/omp/models.yml;
+
+  # Proton-GE at a stable path, for Lutris. Steam picks up Proton-GE through
+  # programs.steam.extraCompatPackages, but Lutris stores an absolute path to
+  # a Wine binary per game, so every new release would otherwise mean editing
+  # each game by hand — and forgetting leaves a game on an old build silently.
+  # Point Lutris at
+  #   ~/.local/share/Steam/compatibilitytools.d/GE-Proton-latest/files/bin/wine
+  # once, and it follows this symlink forward on every rebuild.
+  #
+  # Deliberately not "newest directory in compatibilitytools.d": those come
+  # from protonup-qt, i.e. imperative state outside this repo, and picking the
+  # newest of them by name sorts GE-Proton11-7 above GE-Proton11-11.
+  home.file.".local/share/Steam/compatibilitytools.d/GE-Proton-latest".source =
+    protonPkgs.proton-ge-bin;
 
   ############################################################
   # Look & feel: dark GTK apps, icons, cursor

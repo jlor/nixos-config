@@ -1,4 +1,4 @@
-{ config, lib, pkgs, unstableNixpkgs, ... }:
+{ config, lib, pkgs, unstableNixpkgs, protonPkgs, ... }:
 
 let
   username = "jlor";
@@ -254,7 +254,11 @@ in
     remotePlay.openFirewall = true;
     localNetworkGameTransfers.openFirewall = true;
     gamescopeSession.enable = true;
-    extraCompatPackages = [ pkgs.proton-ge-bin ];
+    # From nixpkgs-proton, not pkgs: 26.05 is stuck on GE-Proton11-1, which
+    # carries a VKD3D-Proton too old to translate D3D12 correctly on this GPU
+    # (see the flake input). home.nix links the same package to a stable path
+    # for Lutris, which pins an absolute Wine binary rather than a version.
+    extraCompatPackages = [ protonPkgs.proton-ge-bin ];
   };
   programs.gamemode.enable = true;         # launch option: gamemoderun %command%
   programs.gamescope.enable = true;
