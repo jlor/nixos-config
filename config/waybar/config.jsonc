@@ -63,10 +63,24 @@
   // libnvidia-ml and libcuda load fine across the mix, which is why nvtop (and
   // NInfer) are unaffected. nvtop is the same figures from the same library,
   // via a binary that stable built against the right libc.
+  //
+  // One streaming nvtop, not one per sample. This was `nvtop -s` on a 5 second
+  // "interval", i.e. a process spawn plus an NVML init roughly 17,000 times a
+  // day, each costing ~0.07s of CPU — about 20 minutes a day, and every one of
+  // them reaching into the driver while whatever is on screen is mid-frame.
+  // `-l` is nvtop's own loop: the same JSON, one process, NVML initialised
+  // once, a sample every `-d` tenths of a second. Measured at 0.00s CPU over
+  // 20 seconds against 0.28s for the four spawns it replaces.
+  //
+  // `-P` drops the per-process list, which is most of each sample's bytes and
+  // none of what is read here. `jq --unbuffered` is required: without it jq
+  // holds results in its pipe buffer and the bar stops updating. No "interval"
+  // on a streaming module — "restart-interval" is what respawns the pipeline if
+  // nvtop ever dies, and omitting both would leave the module dead for good.
   "custom/gpu": {
-    "exec": "nvtop -s | jq -r '.[0] | \"\\(.gpu_util)  \\(.temp | sub(\"C$\"; \"°C\"))\"'",
+    "exec": "nvtop -l -P -d 50 | jq --unbuffered -r '.[0] | \"\\(.gpu_util)  \\(.temp | sub(\"C$\"; \"°C\"))\"'",
     "format": "󰢮  {}",
-    "interval": 5,
+    "restart-interval": 5,
     "tooltip": false
   },
 
