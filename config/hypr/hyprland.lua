@@ -105,7 +105,18 @@ hl.on("hyprland.start", function()
         .. " -o HDMI-A-1 -m fill -i " .. wallpapers .. "wallpaper-portrait.jpg")
     hl.exec_cmd("waybar")
     hl.exec_cmd("mako")
-    hl.exec_cmd("hypridle")
+    -- No hypridle here on purpose. The hypridle package ships its own systemd
+    -- user unit, and putting the package in environment.systemPackages is enough
+    -- for NixOS to install and enable it -- so starting it here as well left two
+    -- daemons running the same hypridle.conf and racing the same lock and dpms
+    -- timers. The packaged unit is the better of the two: it is ordered
+    -- After=/PartOf=graphical-session.target, carries
+    -- ConditionEnvironment=WAYLAND_DISPLAY so it cannot start into the broken
+    -- environment home.nix describes for elephant/walker, and has
+    -- Restart=on-failure. An exec_cmd here has none of that.
+    --
+    -- waybar and mako above do still need their exec_cmd: neither ships an
+    -- enabled user unit.
     hl.exec_cmd("systemctl --user start hyprpolkitagent")
     -- 1Password in the tray: keeps the SSH agent and browser/CLI integration available.
     -- Forced onto XWayland: 1Password's native-Wayland approval popups (e.g. "Access
