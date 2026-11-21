@@ -8,6 +8,37 @@ Steam, Battle.net, the sim racing rig and the Quest 3. Configured in
 Open Lutris → search "Battle.net" → Install. Lutris fetches its own Wine runner.
 Alternative: add the Battle.net installer to Steam as a non-Steam game and force Proton.
 
+## Proton-GE in Lutris
+
+Steam gets Proton-GE automatically (`programs.steam.extraCompatPackages`), but
+Lutris stores an **absolute path to a Wine binary** per game, so it does not
+follow new releases on its own. Point each game at the stable symlink instead
+of a versioned folder:
+
+Lutris → the game → Configure → Runner options → Wine version → Custom, then:
+
+```
+~/.local/share/Steam/compatibilitytools.d/GE-Proton-latest/files/bin/wine
+```
+
+`GE-Proton-latest` is managed by `home.nix` and relinked on every rebuild, so
+the game moves forward with the `nixpkgs-proton` flake input (bumped weekly by
+Renovate) without touching Lutris again.
+
+**Why this matters, not just tidiness.** Proton-GE bundles VKD3D-Proton, which
+translates D3D12 to Vulkan. A stale VKD3D-Proton gets that wrong on Blackwell:
+on GE-Proton11-6, WoW rendered a dither pattern over every alpha-tested surface
+— grass and foliage edges crawled with coloured speckles — which looked like a
+broken post-processing effect but was the translation layer. GE-Proton11-11
+fixed it. A game silently left on an old pinned build is how that returns.
+
+If a game does misbehave, *Options → Graphics → Advanced → Compatibility
+Settings → Optional GPU Features* (in WoW; similar toggles elsewhere) narrows
+down whether it is the translation layer before you start changing settings.
+
+Builds installed by `protonup-qt` land in the same directory but are imperative
+state outside this repo; prefer the symlink.
+
 ## Steam tips
 
 - Proton-GE is pre-installed; select it under Properties → Compatibility.
