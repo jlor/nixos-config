@@ -147,6 +147,28 @@ in
   security.pam.services.greetd.enableGnomeKeyring = true;
   security.polkit.enable = true;
 
+  # ...but not its SSH agent. The module also brings gcr-ssh-agent, which is a
+  # second SSH agent: 1Password owns that job here, and home.nix points
+  # SSH_AUTH_SOCK at its socket. So gcr-ssh-agent ran with a socket nothing
+  # reads (/run/user/1000/gcr/ssh), and it is worse than merely redundant --
+  # anything that misses home.sessionVariables, the same env-import race
+  # home.nix documents for elephant and walker, falls back to the gcr socket,
+  # finds no keys, and fails while 1Password is holding them. Mask the agent
+  # and its socket; the Secret Service above is untouched.
+  systemd.user.services.gcr-ssh-agent.enable = false;
+  systemd.user.sockets.gcr-ssh-agent.enable = false;
+
+  # gnome-keyring's two XDG autostart entries (gnome-keyring-pkcs11.desktop,
+  # gnome-keyring-secrets.desktop) are deliberately NOT shadowed the way
+  # blueman's and nm-applet's are in home.nix. They look like the same
+  # duplicate-start pattern but are not: both run `gnome-keyring-daemon
+  # --start`, which attaches to the daemon pam_gnome_keyring already started
+  # rather than forking a second one. Checked on the running system -- one
+  # daemon (--daemonize --login) owning org.freedesktop.secrets, and both
+  # autostart units having exited 0 at login having started nothing. They are
+  # also a useful fallback if the PAM path ever stops firing, so removing them
+  # would cost resilience to buy symmetry.
+
   # Hyprland's portal is added automatically; GTK one handles file pickers
   xdg.portal.extraPortals = [ pkgs.xdg-desktop-portal-gtk ];
 
@@ -343,10 +365,10 @@ in
 
     # Hyprland essentials
     kitty                 # terminal
-    waybar                # status bar
-    mako                  # notifications
+    waybar                # status bar      (started by hyprland.lua; unit masked below)
+    mako                  # notifications   (started by hyprland.lua; unit masked below)
     swaybg                # wallpaper (per monitor)
-    hypridle              # idle -> lock
+    hypridle              # idle -> lock    (started by its own unit, see hyprland.lua)
     hyprpolkitagent       # password prompts for GUI apps
     wl-clipboard          # wl-copy/wl-paste (Walker keeps the history)
     hyprshot               # screenshot by region / window / monitor; brings its own grim+slurp
@@ -380,6 +402,22 @@ in
     # the case where there is no seat to get an ACL from.
     extraGroups = [ "wheel" "networkmanager" "gamemode" "uinput" ];
   };
+
+  # Close the second start path for the two daemons Hyprland execs directly.
+  #
+  # Installing a package also installs any systemd user units it ships, and
+  # that is how two hypridle daemons ended up racing one config (#107): the
+  # packaged unit was enabled and hyprland.lua exec'd a copy anyway. waybar and
+  # mako ship units too. Neither is enabled, but both are linked and visible to
+  # systemd, so the duplicate is one `systemctl --user start waybar` or one
+  # future `Wants=` away -- with nothing in this repo changing to cause it.
+  #
+  # Masking leaves today's behaviour exactly as it is (hyprland.lua still runs
+  # the binaries) and makes the second path unavailable rather than merely
+  # unused. hypridle is the opposite case on purpose: its unit is the only
+  # starter, because a supervised unit with ConditionEnvironment beats an exec.
+  systemd.user.services.waybar.enable = false;
+  systemd.user.services.mako.enable = false;
 
   ############################################################
   # Nix itself
