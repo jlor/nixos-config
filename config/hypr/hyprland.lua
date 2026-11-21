@@ -269,6 +269,30 @@ hl.window_rule({
     immediate = true,
 })
 
+-- WoW drops its own fullscreen state on a ~35 second timer. Measured: with the
+-- window focused and the cursor sitting still mid-screen, fullscreenClient goes
+-- 2 -> 0 every 34-44s, Hyprland honours it, and the window falls back into the
+-- tiling layout at 2532x1366 with waybar showing. It is the client asking, not
+-- the compositor taking it away: no openwindow/closewindow, no monitor change,
+-- no focus change, and the same window address throughout.
+--
+-- suppress-maximize-events above covers "maximize" but not "fullscreen", so
+-- those requests were getting through. Suppressing both for this window makes
+-- Hyprland ignore them and keep whatever state it was given; the paired
+-- fullscreen rule means it comes up fullscreen without a manual Super+F.
+--
+-- Matched on title, not class: umu gives every Proton game the same
+-- "steam_app_default" class, so class would catch unrelated games. Scoped to
+-- this window rather than widening the global rule, because suppressing
+-- fullscreen everywhere would break apps that legitimately ask for it
+-- (Firefox video, mpv).
+hl.window_rule({
+    name  = "wow-keep-fullscreen",
+    match = { title = "^World of Warcraft$" },
+    fullscreen = true,
+    suppress_event = "fullscreen maximize",
+})
+
 -- SimHub raises a window of its own the moment it detects a running game, and
 -- a newly mapped window takes focus. Keyboard input goes to whatever the
 -- compositor has focused, so mid-session the keys quietly start going to
